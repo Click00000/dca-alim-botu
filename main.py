@@ -363,7 +363,15 @@ def generate_id():
 # CORS ayarları - Cookie gönderimi için gerekli
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "http://localhost:3003", "http://localhost:3004"],
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:3001", 
+        "http://localhost:3002", 
+        "http://localhost:3003", 
+        "http://localhost:3004",
+        "https://dca-alim-botu-5ugrlwh5o-click00000s-projects.vercel.app",
+        "https://*.vercel.app"  # Tüm Vercel subdomain'leri
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -3039,3 +3047,43 @@ if __name__ == "__main__":
     # Production'da PORT environment variable'ı kullan, local'de 8014
     port = int(os.environ.get("PORT", 8014))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+# ---------- VERİ YÜKLEME ENDPOINT'LERİ ----------
+@app.post("/admin/load-data")
+async def load_data_endpoint():
+    """Kullanıcı ve portföy verilerini yükle (admin only)"""
+    try:
+        # Varsayılan admin kullanıcısını oluştur
+        create_default_admin()
+        
+        # Test kullanıcıları oluştur
+        users = load_users()
+        
+        # Test kullanıcıları ekle (eğer yoksa)
+        test_users = [
+            {"username": "deneme1", "password": "deneme123", "email": "deneme1@test.com"},
+            {"username": "deneme2", "password": "deneme123", "email": "deneme2@test.com"},
+            {"username": "deneme3", "password": "deneme123", "email": "deneme3@test.com"},
+            {"username": "deneme4", "password": "deneme123", "email": "deneme4@test.com"}
+        ]
+        
+        for test_user in test_users:
+            if not any(u.get('username') == test_user['username'] for u in users):
+                new_user = {
+                    "id": f"user_{len(users) + 1:03d}",
+                    "username": test_user['username'],
+                    "password": test_user['password'],
+                    "email": test_user['email'],
+                    "is_admin": False,
+                    "created_at": datetime.now().isoformat(),
+                    "last_login": None,
+                    "is_active": True
+                }
+                users.append(new_user)
+                print(f"✅ Test kullanıcı oluşturuldu: {test_user['username']}")
+        
+        save_users(users)
+        
+        return {"success": True, "message": f"{len(users)} kullanıcı yüklendi"}
+    except Exception as e:
+        return {"success": False, "error": f"Veri yüklenemedi: {str(e)}"}
