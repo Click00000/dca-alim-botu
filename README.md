@@ -1,163 +1,77 @@
-# 🚀 DCA Scanner - Portföy Yönetim Sistemi
+# 🚀 DCA Scanner - Manuel Tarama ve Analiz Platformu
 
-## 📋 Sistem Özellikleri
+## 📋 Proje Açıklaması
+DCA (Dollar Cost Averaging) stratejisi için geliştirilmiş, çoklu piyasa tarama ve portföy yönetim platformu.
 
-Bu sistem, kullanıcıların kendi portföylerini oluşturup yönetebilecekleri bir DCA (Dollar Cost Averaging) tarama ve portföy yönetim platformudur.
+## 🛠️ Teknolojiler
+- **Backend:** FastAPI (Python 3.11)
+- **Frontend:** React + TypeScript + Vite
+- **Database:** JSON files
+- **Authentication:** Custom API Key system
 
-### 🔐 Güvenlik Özellikleri
-- **JWT API Key Authentication**: Her kullanıcı için benzersiz API key
-- **Kullanıcı İzolasyonu**: Her kullanıcı sadece kendi portföylerini görebilir
-- **Admin Yetkileri**: Admin kullanıcılar tüm portföyleri görüntüleyebilir
-- **Şifre Hash'leme**: Güvenli şifre saklama
+## 🚀 Deploy
 
-### 📊 Portföy Yönetimi
-- **Çoklu Portföy**: Her kullanıcı maksimum 20 portföy oluşturabilir
-- **İşlem Takibi**: Alım/satım işlemlerini detaylı olarak kaydetme
-- **Fiyat Güncelleme**: Otomatik fiyat güncelleme sistemi
-- **Excel Export**: Portföy verilerini Excel formatında dışa aktırma
-- **Kar/Zarar Hesaplama**: Detaylı kar/zarar analizi
+### Backend (Render.com)
+1. **Repository'yi clone et**
+2. **Render.com'da yeni Web Service oluştur**
+3. **Environment Variables:**
+   - `PYTHON_VERSION`: `3.11.13`
+   - `PORT`: `8014` (Render otomatik atayacak)
+4. **Build Command:** `pip install -r requirements.txt`
+5. **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
-### 🔍 Tarama Özellikleri
-- **BIST Hisse Tarama**: Türkiye borsası hisselerinde tarama
-- **Kripto Tarama**: Kripto para birimlerinde tarama
-- **Teknik Analiz**: TradingView entegrasyonu ile teknik göstergeler
+### Frontend (Vercel.com)
+1. **Repository'yi Vercel'e bağla**
+2. **Environment Variables:**
+   - `VITE_API_URL`: Backend URL'i (örn: `https://your-backend.onrender.com`)
+3. **Deploy et**
 
-## 🚀 Kurulum ve Çalıştırma
+## 🔧 Local Development
 
-### Backend Kurulumu
+### Backend
 ```bash
-# Gerekli paketleri yükle
+# Virtual environment oluştur
+python3.11 -m venv .venv
+source .venv/bin/activate
+
+# Dependencies yükle
 pip install -r requirements.txt
 
 # Backend'i başlat
 python main.py
 ```
 
-Backend varsayılan olarak `http://localhost:8014` adresinde çalışır.
-
-### Frontend Kurulumu
+### Frontend
 ```bash
 cd frontend
-
-# Gerekli paketleri yükle
 npm install
-
-# Geliştirme sunucusunu başlat
 npm run dev
 ```
 
-Frontend varsayılan olarak `http://localhost:3000` adresinde çalışır.
+## 📁 Proje Yapısı
+```
+├── main.py                 # FastAPI backend
+├── requirements.txt        # Python dependencies
+├── Procfile              # Render deploy config
+├── runtime.txt           # Python version
+├── frontend/             # React frontend
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+└── data/                 # JSON data files
+```
 
-## 👥 Kullanıcı Yönetimi
+## 🔐 Test Kullanıcıları
+- **Normal Kullanıcı:** `deneme1` / `deneme123`
+- **Admin:** `admin` / `Sanene88`
 
-### Varsayılan Kullanıcılar
-- **Admin**: `wastfc` / `Sanene88`
-- **Test Kullanıcısı**: `deneme1` / `deneme1`
+## 🌐 API Endpoints
+- **Docs:** `/docs` (Swagger UI)
+- **Login:** `/user/login`
+- **Portfolio:** `/portfolio/*`
+- **Admin:** `/admin/*`
 
-### Yeni Kullanıcı Oluşturma
-Admin panelinden yeni kullanıcılar oluşturulabilir.
-
-## 📱 Kullanım
-
-### 1. Giriş Yapma
-- Ana sayfada "Giriş Yap" butonuna tıklayın
-- Kullanıcı adı ve şifrenizi girin
-- Başarılı girişten sonra otomatik olarak portföy sekmesine yönlendirilirsiniz
-
-### 2. Portföy Oluşturma
-- "Yeni Portföy" butonuna tıklayın
-- Portföy adı ve açıklamasını girin
-- Portföy otomatik olarak oluşturulur
-
-### 3. İşlem Ekleme
-- Portföy seçin
-- "Yeni İşlem" butonuna tıklayın
-- Sembol, işlem türü, fiyat ve miktar bilgilerini girin
-- İşlemi kaydedin
-
-### 4. Portföy Takibi
-- Pozisyonlarınızı görüntüleyin
-- Kar/zarar durumunu takip edin
-- Fiyatları güncelleyin
-- Excel raporu alın
-
-## 🔧 API Endpoint'leri
-
-### Authentication
-- `POST /admin/login` - Admin girişi
-- `POST /user/login` - Kullanıcı girişi
-
-### Portfolio
-- `GET /portfolio/list` - Kullanıcının portföylerini listele
-- `GET /portfolio?portfolio={id}` - Portföy işlemlerini getir
-- `POST /portfolio/create` - Yeni portföy oluştur
-- `POST /portfolio/add` - İşlem ekle
-- `PUT /portfolio/{item_id}` - İşlem güncelle
-- `DELETE /portfolio/{item_id}` - İşlem sil
-- `GET /portfolio/summary?portfolio={id}` - Portföy özeti
-- `GET /portfolio/positions?portfolio={id}` - Pozisyonlar
-- `POST /portfolio/update-prices?portfolio_id={id}` - Fiyatları güncelle
-- `GET /portfolio/export-excel?portfolio_id={id}` - Excel export
-
-### Admin (Sadece Admin Kullanıcılar)
-- `GET /admin/users` - Tüm kullanıcıları listele
-- `POST /admin/users` - Yeni kullanıcı oluştur
-- `PUT /admin/users/{user_id}` - Kullanıcı güncelle
-- `DELETE /admin/users/{user_id}` - Kullanıcı sil
-- `GET /admin/portfolios` - Tüm portföyleri listele
-
-## 🛠️ Teknik Detaylar
-
-### Backend
-- **FastAPI**: Modern Python web framework
-- **Pydantic**: Veri doğrulama
-- **TradingView TA**: Teknik analiz göstergeleri
-- **CCXT**: Kripto exchange entegrasyonu
-
-### Frontend
-- **React**: Modern JavaScript framework
-- **TypeScript**: Tip güvenliği
-- **Tailwind CSS**: Utility-first CSS framework
-- **Axios**: HTTP client
-
-### Veri Saklama
-- **JSON Files**: Dosya tabanlı veri saklama
-- **Portfolio Isolation**: Her kullanıcı için ayrı dosyalar
-- **Backup System**: Otomatik yedekleme
-
-## 🔒 Güvenlik Notları
-
-- API key'ler güvenli şekilde saklanmalı
-- Şifreler hash'lenmiş olarak saklanır
-- Her kullanıcı sadece kendi verilerine erişebilir
-- Admin kullanıcılar tüm verilere erişebilir
-
-## 🐛 Bilinen Sorunlar ve Çözümler
-
-### Login Sorunları
-- Şifre yanlışsa: Şifrenizi kontrol edin
-- API key hatası: Tekrar giriş yapın
-
-### Portfolio Sorunları
-- Portfolio bulunamadı: Portfolio listesini yenileyin
-- İşlem eklenemiyor: Portfolio seçimini kontrol edin
-
-### Fiyat Güncelleme
-- Rate limiting: TradingView API limitleri nedeniyle bekleme süreleri
-- Fiyat alınamıyor: Sembol adını kontrol edin
-
-## 📞 Destek
-
-Herhangi bir sorun yaşarsanız:
-1. Console loglarını kontrol edin
-2. Backend loglarını inceleyin
-3. API endpoint'lerini test edin
-
-## 🚀 Gelecek Özellikler
-
-- [ ] Gerçek zamanlı fiyat takibi
-- [ ] Mobil uygulama
-- [ ] Gelişmiş analiz araçları
-- [ ] Otomatik alım/satım
-- [ ] Email bildirimleri
-- [ ] Çoklu dil desteği
+## 📝 Notlar
+- Python 3.11+ gerekli
+- pandas==2.0.3 ve numpy==1.24.3 kullanılıyor
+- TEST_MODE aktif (şifreler plain text)
