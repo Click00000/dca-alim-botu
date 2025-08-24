@@ -3081,42 +3081,9 @@ async def get_portfolio_details(portfolio_id: str, current_user: dict = Depends(
 
 # ---------- UYGULAMA BAŞLATMA ----------
 if __name__ == "__main__":
-    # Varsayılan admin kullanıcısını oluştur
-    create_default_admin()
-    
-    # Test kullanıcılarını otomatik yükle
-    try:
-        users = load_users()
-        if len(users) < 5:  # Eğer 5'ten az kullanıcı varsa
-            print("🔄 Test kullanıcıları yükleniyor...")
-            
-            # Test kullanıcıları ekle
-            test_users = [
-                {"username": "deneme1", "password": "deneme123", "email": "deneme1@test.com"},
-                {"username": "deneme2", "password": "deneme123", "email": "deneme2@test.com"},
-                {"username": "deneme3", "password": "deneme123", "email": "deneme3@test.com"},
-                {"username": "deneme4", "password": "deneme123", "email": "deneme4@test.com"}
-            ]
-            
-            for test_user in test_users:
-                if not any(u.get('username') == test_user['username'] for u in users):
-                    new_user = {
-                        "id": f"user_{len(users) + 1:03d}",
-                        "username": test_user['username'],
-                        "password": test_user['password'],
-                        "email": test_user['email'],
-                        "is_admin": False,
-                        "created_at": datetime.now().isoformat(),
-                        "last_login": None,
-                        "is_active": True
-                    }
-                    users.append(new_user)
-                    print(f"✅ Test kullanıcı oluşturuldu: {test_user['username']}")
-            
-            save_users(users)
-            print(f"🎉 Toplam {len(users)} kullanıcı yüklendi!")
-    except Exception as e:
-        print(f"⚠️ Test kullanıcıları yüklenirken hata: {e}")
+    # Kalıcı kullanıcı verilerini sağla
+    print("🚀 DCA Scanner Backend başlatılıyor...")
+    ensure_default_users_exist()
     
     import uvicorn
     import os
@@ -3164,3 +3131,56 @@ async def load_data_endpoint():
         return {"success": True, "message": f"{len(users)} kullanıcı yüklendi"}
     except Exception as e:
         return {"success": False, "error": f"Veri yüklenemedi: {str(e)}"}
+
+# ---------- KALICI KULLANICI VERİLERİ ----------
+def ensure_default_users_exist():
+    """Varsayılan kullanıcıların her zaman var olmasını sağla"""
+    users = load_users()
+    
+    # Admin kullanıcısı kontrol et
+    admin_exists = any(user.get('username') == ADMIN_USERNAME for user in users)
+    if not admin_exists:
+        print("🔄 Admin kullanıcısı oluşturuluyor...")
+        admin_user = {
+            "id": "admin_001",
+            "username": ADMIN_USERNAME,
+            "password": ADMIN_PASSWORD,
+            "email": "admin@dca-scanner.com",
+            "is_admin": True,
+            "created_at": datetime.now().isoformat(),
+            "last_login": None,
+            "is_active": True
+        }
+        users.append(admin_user)
+        print(f"✅ Admin kullanıcısı oluşturuldu: {ADMIN_USERNAME}")
+    
+    # Test kullanıcıları kontrol et
+    test_users = [
+        {"username": "deneme1", "password": "deneme123", "email": "deneme1@test.com"},
+        {"username": "deneme2", "password": "deneme123", "email": "deneme2@test.com"},
+        {"username": "deneme3", "password": "deneme123", "email": "deneme3@test.com"},
+        {"username": "deneme4", "password": "deneme123", "email": "deneme4@test.com"}
+    ]
+    
+    for test_user in test_users:
+        if not any(u.get('username') == test_user['username'] for u in users):
+            print(f"🔄 Test kullanıcısı oluşturuluyor: {test_user['username']}")
+            new_user = {
+                "id": f"user_{len(users) + 1:03d}",
+                "username": test_user['username'],
+                "password": test_user['password'],
+                "email": test_user['email'],
+                "is_admin": False,
+                "created_at": datetime.now().isoformat(),
+                "last_login": None,
+                "is_active": True
+            }
+            users.append(new_user)
+            print(f"✅ Test kullanıcısı oluşturuldu: {test_user['username']}")
+    
+    # Kullanıcıları kaydet
+    if len(users) >= 5:  # En az 5 kullanıcı olmalı
+        save_users(users)
+        print(f"🎉 Toplam {len(users)} kullanıcı kalıcı olarak kaydedildi!")
+    
+    return users
