@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 interface User {
@@ -16,6 +16,7 @@ interface Portfolio {
   portfolio_id: string;
   portfolio_name: string;
   portfolio_description: string;
+  owner_username: string;
   total_transactions: number;
   total_symbols: number;
   last_updated: string;

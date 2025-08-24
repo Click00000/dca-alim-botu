@@ -1,7 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useAppStore } from "../store";
-import { WatchlistItem } from "../types";
+
 
 export default function ChartPanel() {
   // Backend URL - Production'da environment variable kullan

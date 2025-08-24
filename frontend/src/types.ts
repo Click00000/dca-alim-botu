@@ -121,6 +121,17 @@ export interface PortfolioUpdateRequest {
   notes?: string;
 }
 
+// Admin panel için portfolio interface
+export interface AdminPortfolio {
+  portfolio_id: string;
+  portfolio_name: string;
+  portfolio_description: string;
+  owner_username: string;
+  total_transactions: number;
+  total_symbols: number;
+  last_updated: string;
+}
+
 // Takip listesi tipleri
 export interface WatchlistItem {
   id: string;

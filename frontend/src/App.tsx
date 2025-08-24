@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import MarketTabs from "./components/MarketTabs";
 import ScannerPanel from "./components/ScannerPanel";
 import ChartPanel from "./components/ChartPanel";

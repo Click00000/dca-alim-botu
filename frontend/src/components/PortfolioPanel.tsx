@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useAppStore } from '../store';
-import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest, PortfolioUpdateRequest } from '../types';
+
+import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest } from '../types';
 import axios from 'axios';
 
 export default function PortfolioPanel() {
   // Backend URL - Production'da environment variable kullan
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dca-scanner-backend.onrender.com';
   
-  const { market } = useAppStore();
+
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
   const [positions, setPositions] = useState<PortfolioPosition[]>([]);
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [editingItem, setEditingItem] = useState<PortfolioItem | null>(null);
+
   const [newItem, setNewItem] = useState<PortfolioAddRequest>({
     symbol: '',
     market: 'bist',
@@ -702,44 +702,7 @@ export default function PortfolioPanel() {
 
 
 
-  // İşlem güncelle
-  const updateItem = async () => {
-    if (!editingItem) return;
-    
-    try {
-      setLoading(true);
-      const updateData: PortfolioUpdateRequest = {
-        price: editingItem.price,
-        quantity: editingItem.quantity,
-        target_price: editingItem.target_price,
-        notes: editingItem.notes
-      };
-      
-      // API key kontrolü
-      const apiKey = localStorage.getItem('api_key');
-      if (!apiKey) {
-        alert('Giriş yapmanız gerekiyor!');
-        return;
-      }
-      
-      const response = await axios.put(`${API_BASE_URL}/portfolio/${editingItem.id}`, updateData, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`
-        },
-        params: {
-          portfolio_id: selectedPortfolioId
-        }
-      });
-      if (response.data.success) {
-        setEditingItem(null);
-        await loadPortfolio();
-      }
-    } catch (error) {
-      console.error('İşlem güncellenemedi:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   // İşlem sil
   const deleteItem = async (id: string) => {
