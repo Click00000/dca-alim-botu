@@ -5,7 +5,7 @@ import axios from 'axios';
 
 export default function PortfolioPanel() {
   // Backend URL - Production'da environment variable kullan
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8014';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dca-scanner-backend.onrender.com';
   
   const { market } = useAppStore();
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
