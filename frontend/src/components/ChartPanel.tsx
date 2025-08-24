@@ -4,6 +4,9 @@ import { useAppStore } from "../store";
 import { WatchlistItem } from "../types";
 
 export default function ChartPanel() {
+  // Backend URL - Production'da environment variable kullan
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8014';
+  
   const { selected, setSelected, watchlist, addToWatchlist } = useAppStore();
   const [addingToWatchlist, setAddingToWatchlist] = useState(false);
 
@@ -21,7 +24,7 @@ export default function ChartPanel() {
     try {
       setAddingToWatchlist(true);
       
-      const response = await axios.post("${API_BASE_URL}/watchlist/add", {
+      const response = await axios.post(`${API_BASE_URL}/watchlist/add`, {
         symbol: selected.symbol,
         market: selected.market,
         target_price: null,

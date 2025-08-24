@@ -58,6 +58,9 @@ function Section({ title, items, color }: { title: string; items: ScanItem[]; co
 }
 
 export default function ScannerPanel() {
+  // Backend URL - Production'da environment variable kullan
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8014';
+  
   const { market, timeframe, setItems, items, loading, setLoading, error, setError, clearError } = useAppStore();
   const [scanCount, setScanCount] = useState(0);
   const [searchSymbol, setSearchSymbol] = useState("");

@@ -5,6 +5,9 @@ import { WatchlistItem } from "../types";
 import LoadingSpinner from "./LoadingSpinner";
 
 export default function WatchlistPanel() {
+  // Backend URL - Production'da environment variable kullan
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8014';
+  
   const { 
     watchlist, 
     setWatchlist, 
@@ -26,7 +29,7 @@ export default function WatchlistPanel() {
   const loadWatchlist = async () => {
     try {
       setWatchlistLoading(true);
-      const response = await axios.get("${API_BASE_URL}/watchlist");
+      const response = await axios.get(`${API_BASE_URL}/watchlist`);
       if (response.data.success) {
         setWatchlist(response.data.watchlist);
       }
@@ -41,7 +44,7 @@ export default function WatchlistPanel() {
   const handleUpdatePrices = async () => {
     try {
       setUpdatingPrices(true);
-      const response = await axios.post("${API_BASE_URL}/watchlist/update-prices");
+      const response = await axios.post(`${API_BASE_URL}/watchlist/update-prices`);
       if (response.data.success) {
         setWatchlist(response.data.watchlist);
       }

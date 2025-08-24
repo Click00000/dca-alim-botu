@@ -5,7 +5,7 @@ import axios from 'axios';
 
 export default function PortfolioPanel() {
   // Backend URL - Production'da environment variable kullan
-  const API_BASE_URL = import.meta.env.VITE_API_URL || '${API_BASE_URL}';
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8014';
   
   const { market } = useAppStore();
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -322,7 +322,7 @@ export default function PortfolioPanel() {
       
       console.log('🔍 DEBUG: Making request to portfolio/list with API key:', apiKey.substring(0, 10) + '...');
       
-      const response = await axios.get('${API_BASE_URL}/portfolio/list', {
+      const response = await axios.get(`${API_BASE_URL}/portfolio/list`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
