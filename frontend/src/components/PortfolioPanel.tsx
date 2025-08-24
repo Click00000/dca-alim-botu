@@ -565,7 +565,7 @@ export default function PortfolioPanel() {
       console.log('DEBUG: newItem:', newItem);
       console.log('DEBUG: itemWithPortfolio:', itemWithPortfolio);
 
-      const response = await axios.post('${API_BASE_URL}/portfolio/add', itemWithPortfolio, {
+      const response = await axios.post(`${API_BASE_URL}/portfolio/add`, itemWithPortfolio, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
