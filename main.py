@@ -1106,9 +1106,52 @@ class ChartResponse(BaseModel):
 
 # ---------- API Endpoints ----------
 @app.get("/health")
-def health():
-    """Sağlık kontrolü"""
-    return {"status": "ok", "timestamp": datetime.now().isoformat()}
+async def health_check():
+    """Backend sağlık kontrolü"""
+    try:
+        users = load_users()
+        return {
+            "status": "ok",
+            "timestamp": datetime.now().isoformat(),
+            "users_count": len(users),
+            "backend": "DCA Scanner Backend",
+            "version": "1.0.0"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "timestamp": datetime.now().isoformat(),
+            "error": str(e)
+        }
+
+@app.get("/status")
+async def system_status():
+    """Sistem durumu ve kullanıcı bilgileri"""
+    try:
+        users = load_users()
+        user_list = []
+        
+        for user in users:
+            user_info = {
+                "username": user.get("username"),
+                "is_admin": user.get("is_admin", False),
+                "is_active": user.get("is_active", True),
+                "last_login": user.get("last_login")
+            }
+            user_list.append(user_info)
+        
+        return {
+            "success": True,
+            "total_users": len(users),
+            "users": user_list,
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }
 
 @app.get("/test-bist")
 def test_bist():
@@ -3040,6 +3083,40 @@ async def get_portfolio_details(portfolio_id: str, current_user: dict = Depends(
 if __name__ == "__main__":
     # Varsayılan admin kullanıcısını oluştur
     create_default_admin()
+    
+    # Test kullanıcılarını otomatik yükle
+    try:
+        users = load_users()
+        if len(users) < 5:  # Eğer 5'ten az kullanıcı varsa
+            print("🔄 Test kullanıcıları yükleniyor...")
+            
+            # Test kullanıcıları ekle
+            test_users = [
+                {"username": "deneme1", "password": "deneme123", "email": "deneme1@test.com"},
+                {"username": "deneme2", "password": "deneme123", "email": "deneme2@test.com"},
+                {"username": "deneme3", "password": "deneme123", "email": "deneme3@test.com"},
+                {"username": "deneme4", "password": "deneme123", "email": "deneme4@test.com"}
+            ]
+            
+            for test_user in test_users:
+                if not any(u.get('username') == test_user['username'] for u in users):
+                    new_user = {
+                        "id": f"user_{len(users) + 1:03d}",
+                        "username": test_user['username'],
+                        "password": test_user['password'],
+                        "email": test_user['email'],
+                        "is_admin": False,
+                        "created_at": datetime.now().isoformat(),
+                        "last_login": None,
+                        "is_active": True
+                    }
+                    users.append(new_user)
+                    print(f"✅ Test kullanıcı oluşturuldu: {test_user['username']}")
+            
+            save_users(users)
+            print(f"🎉 Toplam {len(users)} kullanıcı yüklendi!")
+    except Exception as e:
+        print(f"⚠️ Test kullanıcıları yüklenirken hata: {e}")
     
     import uvicorn
     import os
