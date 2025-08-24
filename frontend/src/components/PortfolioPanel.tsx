@@ -620,7 +620,7 @@ export default function PortfolioPanel() {
         return;
       }
 
-      const response = await axios.post('${API_BASE_URL}/portfolio/create', {
+      const response = await axios.post(`${API_BASE_URL}/portfolio/create`, {
         name: newPortfolio.name,
         description: newPortfolio.description
       }, {
