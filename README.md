@@ -75,3 +75,4 @@ npm run dev
 - Python 3.11+ gerekli
 - pandas==2.0.3 ve numpy==1.24.3 kullanılıyor
 - TEST_MODE aktif (şifreler plain text)
+# Vercel deploy trigger
