@@ -626,6 +626,7 @@ app.add_middleware(
         "http://localhost:3003", 
         "http://localhost:3004",
         "https://dca-alim-botu-5ugrlwh5o-click00000s-projects.vercel.app",
+        "https://dca-alim-botu-9zj1.vercel.app",  # Yeni Vercel domain
         "https://*.vercel.app"  # Tüm Vercel subdomain'leri
     ],
     allow_credentials=True,
