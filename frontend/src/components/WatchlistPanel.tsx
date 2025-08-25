@@ -6,7 +6,7 @@ import LoadingSpinner from "./LoadingSpinner";
 
 export default function WatchlistPanel() {
   // Backend URL - Production'da environment variable kullan
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dca-scanner-backend.onrender.com';
+  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
   
   const { 
     watchlist, 

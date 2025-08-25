@@ -4,8 +4,8 @@ import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest
 import axios from 'axios';
 
 export default function PortfolioPanel() {
-  // Backend URL - Production'da environment variable kullan
-  const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://dca-scanner-backend.onrender.com';
+  // Backend URL - Production'da sabit URL kullan
+  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
   
   // Debug: API_BASE_URL değerini console'a yazdır
   console.log('🔍 DEBUG: API_BASE_URL =', API_BASE_URL);
