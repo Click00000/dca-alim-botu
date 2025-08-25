@@ -283,7 +283,7 @@ export default function PortfolioPanel() {
           setShowSymbolSuggestions(true);
         }
       } else if (newItem.market === "crypto") {
-        const response = await api.get(`//search-crypto`, {
+        const response = await api.get(`/search-crypto`, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -406,10 +406,10 @@ export default function PortfolioPanel() {
       // Seçili portföy ID'sini URL'e ekle
       const portfolioParam = `?portfolio=${selectedPortfolioId}`;
       
-      console.log('🔍 DEBUG: Portfolio endpoint çağrılıyor:', `//portfolio${portfolioParam}`);
+      console.log('🔍 DEBUG: Portfolio endpoint çağrılıyor:', `/portfolio${portfolioParam}`);
       
       // Tüm işlemleri yükle
-      const response = await api.get(`//portfolio${portfolioParam}`, {
+      const response = await api.get(`/portfolio${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -426,7 +426,7 @@ export default function PortfolioPanel() {
       }
       
       // Gruplandırılmış pozisyonları yükle
-      const positionsResponse = await api.get(`//portfolio/positions${portfolioParam}`, {
+      const positionsResponse = await api.get(`/portfolio/positions${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -440,7 +440,7 @@ export default function PortfolioPanel() {
       }
       
       // Özet bilgileri yükle
-      const summaryResponse = await api.get(`//portfolio/summary${portfolioParam}`, {
+      const summaryResponse = await api.get(`/portfolio/summary${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -471,7 +471,7 @@ export default function PortfolioPanel() {
         return;
       }
       
-      const response = await api.post(`//portfolio/update-prices?portfolio_id=${selectedPortfolioId}`, {}, {
+      const response = await api.post(`/portfolio/update-prices?portfolio_id=${selectedPortfolioId}`, {}, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -499,7 +499,7 @@ export default function PortfolioPanel() {
       }
       
       // Excel dosyasını indir
-      const response = await api.get(`//portfolio/export-excel?portfolio_id=${selectedPortfolioId}`, {
+      const response = await api.get(`/portfolio/export-excel?portfolio_id=${selectedPortfolioId}`, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${apiKey}`
@@ -565,7 +565,7 @@ export default function PortfolioPanel() {
       console.log('DEBUG: newItem:', newItem);
       console.log('DEBUG: itemWithPortfolio:', itemWithPortfolio);
 
-      const response = await api.post(`//portfolio/add`, itemWithPortfolio, {
+      const response = await api.post(`/portfolio/add`, itemWithPortfolio, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
@@ -620,7 +620,7 @@ export default function PortfolioPanel() {
         return;
       }
 
-      const response = await api.post(`//portfolio/create`, {
+      const response = await api.post(`/portfolio/create`, {
         name: newPortfolio.name,
         description: newPortfolio.description
       }, {
@@ -670,7 +670,7 @@ export default function PortfolioPanel() {
         return;
       }
 
-      const response = await api.delete(`//portfolio/delete/${portfolioId}`, {
+      const response = await api.delete(`/portfolio/delete/${portfolioId}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -717,7 +717,7 @@ export default function PortfolioPanel() {
         return;
       }
       
-      const response = await api.delete(`//portfolios/${id}`, {
+      const response = await api.delete(`/portfolios/${id}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -815,7 +815,7 @@ export default function PortfolioPanel() {
       }
 
       const formData = editFormData[itemId];
-      const response = await api.put(`//portfolio/${itemId}`, {
+      const response = await api.put(`/portfolio/${itemId}`, {
         transaction_type: formData.transaction_type,
         price: parseFloat(formData.price),
         quantity: parseFloat(formData.quantity),
