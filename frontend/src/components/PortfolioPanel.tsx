@@ -5,6 +5,9 @@ import { API_ENDPOINTS } from '../config/api';
 import axios from 'axios';
 
 export default function PortfolioPanel() {
+  // Backend URL - Production'da sabit URL kullan
+  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
+  
   // Debug: API endpoints'i console'a yazdır
   console.log('🔍 DEBUG: API_ENDPOINTS =', API_ENDPOINTS);
   
