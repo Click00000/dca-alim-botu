@@ -4,6 +4,18 @@ import App from './App.tsx'
 import './index.css'
 import axios from 'axios'
 
+// Hızlı teşhis: fetch ve form submit logger ekle
+if (import.meta.env.DEV) {
+  const _fetch = window.fetch.bind(window);
+  window.fetch = (...args) => {
+    console.log("FETCH DEBUG →", args[0]);
+    return _fetch(...args as Parameters<typeof _fetch>);
+  };
+  document.addEventListener("submit", (e) => {
+    console.log("FORM SUBMIT DEBUG →", e.target);
+  });
+}
+
 // Service Worker cache temizleme
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
