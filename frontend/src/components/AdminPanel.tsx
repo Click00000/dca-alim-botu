@@ -59,7 +59,7 @@ export default function AdminPanel() {
   const handleLogin = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/admin/login`, loginForm);
+      const response = await api.post(`/admin/login`, loginForm);
       
       if (response.data.success) {
         const adminApiKey = response.data.api_key;
@@ -87,7 +87,7 @@ export default function AdminPanel() {
         return;
       }
       
-      const response = await axios.get(`${API_BASE_URL}/admin/users`, {
+      const response = await api.get(`/admin/users`, {
         headers: {
           'Authorization': `Bearer ${keyToUse}`
         }
@@ -110,7 +110,7 @@ export default function AdminPanel() {
         return;
       }
       
-      const response = await axios.get(`${API_BASE_URL}/admin/portfolios`, {
+      const response = await api.get(`/admin/portfolios`, {
         headers: {
           'Authorization': `Bearer ${keyToUse}`
         }
@@ -128,7 +128,7 @@ export default function AdminPanel() {
   const createUser = async () => {
     try {
       setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/admin/users`, newUserForm, {
+      const response = await api.post(`/admin/users`, newUserForm, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -155,7 +155,7 @@ export default function AdminPanel() {
     
     try {
       setLoading(true);
-      const response = await axios.put(`${API_BASE_URL}/admin/users/${editingUserId}`, editUserForm, {
+      const response = await api.put(`/admin/users/${editingUserId}`, editUserForm, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -185,7 +185,7 @@ export default function AdminPanel() {
     
     try {
       setLoading(true);
-      const response = await axios.delete(`${API_BASE_URL}/admin/users/${userId}`, {
+      const response = await api.delete(`/admin/users/${userId}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -208,7 +208,7 @@ export default function AdminPanel() {
   // Portföy detaylarını getir
   const loadPortfolioDetails = async (portfolioId: string) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/admin/portfolio/${portfolioId}`, {
+      const response = await api.get(`/admin/portfolio/${portfolioId}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 import { useAppStore } from "../store";
 import { ScanItem } from "../types";
 import LoadingSpinner from "./LoadingSpinner";
@@ -83,13 +83,13 @@ export default function ScannerPanel() {
       
       // BIST için özel scan endpoint kullan
       if (market === "bist") {
-        const response = await axios.get(`${API_BASE_URL}/scan`, {
+        const response = await api.get(`/scan`, {
           params: { market, tf: timeframe }
         });
         data = response.data;
       } else {
         // Diğer piyasalar için eski endpoint
-        const response = await axios.get(`${API_BASE_URL}/scan`, {
+        const response = await api.get(`/scan`, {
           params: { market, tf: timeframe }
         });
         data = response.data;
@@ -125,7 +125,7 @@ export default function ScannerPanel() {
       setSuggestionsLoading(true);
       
       if (market === "bist") {
-        const response = await axios.get(`${API_BASE_URL}/search-bist`, {
+        const response = await api.get(`/search-bist`, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -134,7 +134,7 @@ export default function ScannerPanel() {
           setShowSuggestions(true);
         }
       } else if (market === "crypto") {
-        const response = await axios.get(`${API_BASE_URL}/search-crypto`, {
+        const response = await api.get(`/search-crypto`, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -166,13 +166,13 @@ export default function ScannerPanel() {
       
       // BIST için özel endpoint kullan
       if (market === "bist") {
-        const response = await axios.get(`${API_BASE_URL}/chart-bist`, {
+        const response = await api.get(`/chart-bist`, {
           params: { symbol: searchSymbol.trim().toUpperCase(), tf: timeframe }
         });
         data = response.data;
       } else {
         // Diğer piyasalar için eski endpoint
-        const response = await axios.get(`${API_BASE_URL}/chart`, {
+        const response = await api.get(`/chart`, {
           params: { symbol: searchSymbol.trim().toUpperCase(), market, tf: timeframe }
         });
         data = response.data;

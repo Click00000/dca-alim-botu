@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 import { useAppStore } from "../store";
 import { WatchlistItem } from "../types";
 import LoadingSpinner from "./LoadingSpinner";
@@ -29,7 +29,7 @@ export default function WatchlistPanel() {
   const loadWatchlist = async () => {
     try {
       setWatchlistLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/watchlist`);
+      const response = await api.get(`/watchlist`);
       if (response.data.success) {
         setWatchlist(response.data.watchlist);
       }
@@ -44,7 +44,7 @@ export default function WatchlistPanel() {
   const handleUpdatePrices = async () => {
     try {
       setUpdatingPrices(true);
-      const response = await axios.post(`${API_BASE_URL}/watchlist/update-prices`);
+      const response = await api.post(`/watchlist/update-prices`);
       if (response.data.success) {
         setWatchlist(response.data.watchlist);
       }
@@ -58,7 +58,7 @@ export default function WatchlistPanel() {
   // Takip listesinden kaldır
   const handleRemoveFromWatchlist = async (id: string) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/watchlist/${id}`);
+      const response = await api.delete(`/watchlist/${id}`);
       if (response.data.success) {
         removeFromWatchlist(id);
       }
@@ -79,7 +79,7 @@ export default function WatchlistPanel() {
   // Düzenlemeyi kaydet
   const handleSaveEdit = async (id: string) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/watchlist/${id}`, {
+      const response = await api.put(`/watchlist/${id}`, {
         target_price: editForm.target_price ? parseFloat(editForm.target_price) : null,
         notes: editForm.notes || null
       });

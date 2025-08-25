@@ -1,5 +1,5 @@
 import { useState } from "react";
-import axios from "axios";
+import { api } from "../lib/api";
 import { useAppStore } from "../store";
 
 
@@ -24,7 +24,7 @@ export default function ChartPanel() {
     try {
       setAddingToWatchlist(true);
       
-      const response = await axios.post(`${API_BASE_URL}/watchlist/add`, {
+      const response = await api.post(`/watchlist/add`, {
         symbol: selected.symbol,
         market: selected.market,
         target_price: null,
