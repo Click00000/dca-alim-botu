@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 interface LoginPanelProps {
   onLoginSuccess: (userData: any) => void;
@@ -7,8 +7,7 @@ interface LoginPanelProps {
 }
 
 export default function LoginPanel({ onLoginSuccess, onBackToMain }: LoginPanelProps) {
-  // Backend URL - Production'da sabit URL kullan
-  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
+
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -21,7 +20,7 @@ export default function LoginPanel({ onLoginSuccess, onBackToMain }: LoginPanelP
     setError('');
 
     try {
-      const response = await api.post(`/user/login`, {
+      const response = await api.post('/user/login', {
         username,
         password
       });
