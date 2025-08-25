@@ -32,6 +32,14 @@ axios.interceptors.request.use((cfg) => {
   return cfg;
 });
 
+// Runtime assert - global axios kullanımını yakala
+if (import.meta.env.DEV) {
+  // @ts-ignore
+  if ((window as any).axios) {
+    throw new Error("Global axios detected. Use '@/lib/api' only.");
+  }
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
