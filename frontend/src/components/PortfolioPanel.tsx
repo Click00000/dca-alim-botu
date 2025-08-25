@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest } from '../types';
-import { API_ENDPOINTS } from '../config/api';
-import axios from 'axios';
+import { api } from '../lib/api';
 
 export default function PortfolioPanel() {
-  // Backend URL - Production'da sabit URL kullan
-  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
-  
-  // Debug: API endpoints'i console'a yazdır
-  console.log('🔍 DEBUG: API_ENDPOINTS =', API_ENDPOINTS);
+  // Debug: API instance'ı console'a yazdır
+  console.log('🔍 DEBUG: API Instance baseURL =', api.defaults.baseURL);
   
 
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -278,7 +274,7 @@ export default function PortfolioPanel() {
       setSymbolSuggestionsLoading(true);
       
       if (newItem.market === "bist") {
-        const response = await axios.get(API_ENDPOINTS.SEARCH_BIST, {
+        const response = await api.get(API_ENDPOINTS.SEARCH_BIST, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -287,7 +283,7 @@ export default function PortfolioPanel() {
           setShowSymbolSuggestions(true);
         }
       } else if (newItem.market === "crypto") {
-        const response = await axios.get(`${API_BASE_URL}/search-crypto`, {
+        const response = await api.get(`//search-crypto`, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -326,7 +322,7 @@ export default function PortfolioPanel() {
       
       console.log('🔍 DEBUG: Making request to portfolio/list with API key:', apiKey.substring(0, 10) + '...');
       
-      const response = await axios.get(API_ENDPOINTS.PORTFOLIO_LIST, {
+      const response = await api.get(API_ENDPOINTS.PORTFOLIO_LIST, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -410,10 +406,10 @@ export default function PortfolioPanel() {
       // Seçili portföy ID'sini URL'e ekle
       const portfolioParam = `?portfolio=${selectedPortfolioId}`;
       
-      console.log('🔍 DEBUG: Portfolio endpoint çağrılıyor:', `${API_BASE_URL}/portfolio${portfolioParam}`);
+      console.log('🔍 DEBUG: Portfolio endpoint çağrılıyor:', `//portfolio${portfolioParam}`);
       
       // Tüm işlemleri yükle
-      const response = await axios.get(`${API_BASE_URL}/portfolio${portfolioParam}`, {
+      const response = await api.get(`//portfolio${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -430,7 +426,7 @@ export default function PortfolioPanel() {
       }
       
       // Gruplandırılmış pozisyonları yükle
-      const positionsResponse = await axios.get(`${API_BASE_URL}/portfolio/positions${portfolioParam}`, {
+      const positionsResponse = await api.get(`//portfolio/positions${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -444,7 +440,7 @@ export default function PortfolioPanel() {
       }
       
       // Özet bilgileri yükle
-      const summaryResponse = await axios.get(`${API_BASE_URL}/portfolio/summary${portfolioParam}`, {
+      const summaryResponse = await api.get(`//portfolio/summary${portfolioParam}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -475,7 +471,7 @@ export default function PortfolioPanel() {
         return;
       }
       
-      const response = await axios.post(`${API_BASE_URL}/portfolio/update-prices?portfolio_id=${selectedPortfolioId}`, {}, {
+      const response = await api.post(`//portfolio/update-prices?portfolio_id=${selectedPortfolioId}`, {}, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -503,7 +499,7 @@ export default function PortfolioPanel() {
       }
       
       // Excel dosyasını indir
-      const response = await axios.get(`${API_BASE_URL}/portfolio/export-excel?portfolio_id=${selectedPortfolioId}`, {
+      const response = await api.get(`//portfolio/export-excel?portfolio_id=${selectedPortfolioId}`, {
         responseType: 'blob',
         headers: {
           'Authorization': `Bearer ${apiKey}`
@@ -569,7 +565,7 @@ export default function PortfolioPanel() {
       console.log('DEBUG: newItem:', newItem);
       console.log('DEBUG: itemWithPortfolio:', itemWithPortfolio);
 
-      const response = await axios.post(`${API_BASE_URL}/portfolio/add`, itemWithPortfolio, {
+      const response = await api.post(`//portfolio/add`, itemWithPortfolio, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`
@@ -624,7 +620,7 @@ export default function PortfolioPanel() {
         return;
       }
 
-      const response = await axios.post(`${API_BASE_URL}/portfolio/create`, {
+      const response = await api.post(`//portfolio/create`, {
         name: newPortfolio.name,
         description: newPortfolio.description
       }, {
@@ -674,7 +670,7 @@ export default function PortfolioPanel() {
         return;
       }
 
-      const response = await axios.delete(`${API_BASE_URL}/portfolio/delete/${portfolioId}`, {
+      const response = await api.delete(`//portfolio/delete/${portfolioId}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -721,7 +717,7 @@ export default function PortfolioPanel() {
         return;
       }
       
-      const response = await axios.delete(`${API_BASE_URL}/portfolios/${id}`, {
+      const response = await api.delete(`//portfolios/${id}`, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
@@ -819,7 +815,7 @@ export default function PortfolioPanel() {
       }
 
       const formData = editFormData[itemId];
-      const response = await axios.put(`${API_BASE_URL}/portfolio/${itemId}`, {
+      const response = await api.put(`//portfolio/${itemId}`, {
         transaction_type: formData.transaction_type,
         price: parseFloat(formData.price),
         quantity: parseFloat(formData.quantity),
