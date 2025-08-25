@@ -4,7 +4,7 @@ import { useAppStore } from "../store";
 
 
 export default function ChartPanel() {
-  // Backend URL - Production'da environment variable kullan
+  // Backend URL - Production'da sabit URL kullan
   const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
   
   const { selected, setSelected, watchlist, addToWatchlist } = useAppStore();

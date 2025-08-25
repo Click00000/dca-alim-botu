@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest } from '../types';
+import { API_ENDPOINTS } from '../config/api';
 import axios from 'axios';
 
 export default function PortfolioPanel() {
-  // Backend URL - Production'da sabit URL kullan
-  const API_BASE_URL = 'https://dca-scanner-backend.onrender.com';
-  
-  // Debug: API_BASE_URL değerini console'a yazdır
-  console.log('🔍 DEBUG: API_BASE_URL =', API_BASE_URL);
-  console.log('🔍 DEBUG: import.meta.env.VITE_API_URL =', import.meta.env.VITE_API_URL);
+  // Debug: API endpoints'i console'a yazdır
+  console.log('🔍 DEBUG: API_ENDPOINTS =', API_ENDPOINTS);
   
 
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>([]);
@@ -278,7 +275,7 @@ export default function PortfolioPanel() {
       setSymbolSuggestionsLoading(true);
       
       if (newItem.market === "bist") {
-        const response = await axios.get(`${API_BASE_URL}/search-bist`, {
+        const response = await axios.get(API_ENDPOINTS.SEARCH_BIST, {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -326,7 +323,7 @@ export default function PortfolioPanel() {
       
       console.log('🔍 DEBUG: Making request to portfolio/list with API key:', apiKey.substring(0, 10) + '...');
       
-      const response = await axios.get(`${API_BASE_URL}/portfolio/list`, {
+      const response = await axios.get(API_ENDPOINTS.PORTFOLIO_LIST, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
