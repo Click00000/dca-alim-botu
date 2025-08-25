@@ -274,7 +274,7 @@ export default function PortfolioPanel() {
       setSymbolSuggestionsLoading(true);
       
       if (newItem.market === "bist") {
-        const response = await api.get(API_ENDPOINTS.SEARCH_BIST, {
+        const response = await api.get('/search-bist', {
           params: { q: query.trim(), limit: 10 }
         });
         
@@ -322,7 +322,7 @@ export default function PortfolioPanel() {
       
       console.log('🔍 DEBUG: Making request to portfolio/list with API key:', apiKey.substring(0, 10) + '...');
       
-      const response = await api.get(API_ENDPOINTS.PORTFOLIO_LIST, {
+      const response = await api.get('/portfolio/list', {
         headers: {
           'Authorization': `Bearer ${apiKey}`
         }
