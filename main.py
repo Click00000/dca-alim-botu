@@ -13,6 +13,8 @@ import asyncio
 import time
 import json
 import os
+import sqlite3
+from contextlib import contextmanager
 
 import hashlib
 from collections import deque
@@ -27,6 +29,168 @@ from bist_stocks_ak import BIST_STOCKS_AK, get_stocks_by_symbol as get_stocks_ak
 from bist_stocks_lz import BIST_STOCKS_LZ, get_stocks_by_symbol as get_stocks_lz_by_symbol, search_stocks as search_stocks_lz
 
 app = FastAPI(title="DCA Scanner API", version="1.0.0")
+
+# ---------- Database Yönetimi ----------
+DATABASE_PATH = os.environ.get("DATABASE_PATH", "dca_scanner.db")
+
+def init_database():
+    """Database'i başlat ve tabloları oluştur"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Kullanıcılar tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    id TEXT PRIMARY KEY,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    email TEXT,
+                    is_admin BOOLEAN DEFAULT FALSE,
+                    created_at TEXT NOT NULL,
+                    last_login TEXT,
+                    is_active BOOLEAN DEFAULT TRUE
+                )
+            ''')
+            
+            # Portföyler tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS portfolios (
+                    portfolio_id TEXT PRIMARY KEY,
+                    portfolio_name TEXT NOT NULL,
+                    portfolio_description TEXT,
+                    owner_username TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    last_updated TEXT
+                )
+            ''')
+            
+            # Portföy işlemleri tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS portfolio_items (
+                    id TEXT PRIMARY KEY,
+                    portfolio_id TEXT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    market TEXT NOT NULL,
+                    transaction_type TEXT NOT NULL,
+                    price REAL NOT NULL,
+                    quantity REAL NOT NULL,
+                    date TEXT NOT NULL,
+                    target_price REAL,
+                    notes TEXT,
+                    current_price REAL,
+                    last_updated TEXT,
+                    owner_username TEXT NOT NULL,
+                    FOREIGN KEY (portfolio_id) REFERENCES portfolios (portfolio_id)
+                )
+            ''')
+            
+            # Takip listesi tablosu
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS watchlist (
+                    id TEXT PRIMARY KEY,
+                    symbol TEXT NOT NULL,
+                    market TEXT NOT NULL,
+                    added_date TEXT NOT NULL,
+                    current_price REAL,
+                    last_updated TEXT,
+                    target_price REAL,
+                    notes TEXT
+                )
+            ''')
+            
+            conn.commit()
+            print("✅ Database tabloları başarıyla oluşturuldu")
+            
+    except Exception as e:
+        print(f"❌ Database başlatma hatası: {e}")
+
+@contextmanager
+def get_db_connection():
+    """Database bağlantısı için context manager"""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row  # Dict-like access
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+def migrate_json_to_database():
+    """JSON dosyalarından verileri database'e taşı"""
+    try:
+        # Kullanıcıları taşı
+        if os.path.exists(USERS_FILE):
+            with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                users = json.load(f)
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                for user in users:
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO users 
+                        (id, username, password, email, is_admin, created_at, last_login, is_active)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        user.get('id'), user.get('username'), user.get('password'),
+                        user.get('email'), user.get('is_admin', False),
+                        user.get('created_at'), user.get('last_login'),
+                        user.get('is_active', True)
+                    ))
+                conn.commit()
+                print(f"✅ {len(users)} kullanıcı database'e taşındı")
+        
+        # Portföyleri taşı
+        if os.path.exists(PORTFOLIO_LIST_FILE):
+            with open(PORTFOLIO_LIST_FILE, 'r', encoding='utf-8') as f:
+                portfolios = json.load(f)
+            
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                for portfolio in portfolios:
+                    cursor.execute('''
+                        INSERT OR REPLACE INTO portfolios 
+                        (portfolio_id, portfolio_name, portfolio_description, owner_username, created_at)
+                        VALUES (?, ?, ?, ?, ?)
+                    ''', (
+                        portfolio.get('portfolio_id'), portfolio.get('portfolio_name'),
+                        portfolio.get('portfolio_description'), portfolio.get('owner_username'),
+                        portfolio.get('created_at')
+                    ))
+                conn.commit()
+                print(f"✅ {len(portfolios)} portföy database'e taşındı")
+        
+        # Portföy işlemlerini taşı
+        if os.path.exists(PORTFOLIO_DIR):
+            for filename in os.listdir(PORTFOLIO_DIR):
+                if filename.endswith('.json'):
+                    portfolio_id = filename.replace('.json', '')
+                    portfolio_file = os.path.join(PORTFOLIO_DIR, filename)
+                    
+                    with open(portfolio_file, 'r', encoding='utf-8') as f:
+                        items = json.load(f)
+                    
+                    with get_db_connection() as conn:
+                        cursor = conn.cursor()
+                        for item in items:
+                            cursor.execute('''
+                                INSERT OR REPLACE INTO portfolio_items 
+                                (id, portfolio_id, symbol, market, transaction_type, price, quantity,
+                                 date, target_price, notes, current_price, last_updated, owner_username)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ''', (
+                                item.get('id'), portfolio_id, item.get('symbol'), item.get('market'),
+                                item.get('transaction_type'), item.get('price'), item.get('quantity'),
+                                item.get('date'), item.get('target_price'), item.get('notes'),
+                                item.get('current_price'), item.get('last_updated'),
+                                item.get('owner_username')
+                            ))
+                        conn.commit()
+                        print(f"✅ {len(items)} işlem {portfolio_id} için database'e taşındı")
+        
+        print("🎉 Tüm veriler database'e başarıyla taşındı!")
+        
+    except Exception as e:
+        print(f"❌ Veri taşıma hatası: {e}")
 
 # ---------- Portföy Modelleri ----------
 class PortfolioItem(BaseModel):
@@ -147,26 +311,36 @@ ADMIN_PASSWORD = "Sanene88"  # Gerçek uygulamada hash'lenmiş olmalı
 TEST_MODE = True  # False yaparak production moduna geçebilirsiniz
 
 def load_users():
-    """Kullanıcı listesini yükle"""
-    if os.path.exists(USERS_FILE):
-        try:
-            with open(USERS_FILE, 'r', encoding='utf-8') as f:
-                users = json.load(f)
+    """Kullanıcı listesini database'den yükle"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT * FROM users WHERE is_active = 1')
+            users = []
+            for row in cursor.fetchall():
+                user = dict(row)
                 
                 # Test modunda mevcut hash'li şifreleri düz metin olarak göster
                 if TEST_MODE:
-                    for user in users:
-                        # Eğer şifre hash ise, düz metin olarak göster
-                        if len(user.get('password', '')) == 64:  # SHA256 hash uzunluğu
-                            if user['username'] == 'wastfc':
-                                user['password'] = 'Sanene88'  # Admin şifresi
-                            else:
-                                user['password'] = 'deneme123'  # Test kullanıcıları
+                    # Eğer şifre hash ise, düz metin olarak göster
+                    if len(user.get('password', '')) == 64:  # SHA256 hash uzunluğu
+                        if user['username'] == 'wastfc':
+                            user['password'] = 'Sanene88'  # Admin şifresi
+                        else:
+                            user['password'] = 'deneme123'  # Test kullanıcıları
                 
-                return users
-        except:
-            return []
-    return []
+                users.append(user)
+            return users
+    except Exception as e:
+        print(f"❌ Database'den kullanıcı yükleme hatası: {e}")
+        # Fallback: JSON dosyasından yükle
+        if os.path.exists(USERS_FILE):
+            try:
+                with open(USERS_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                pass
+        return []
 
 def hash_password(password: str) -> str:
     """Şifreyi hash'le"""
@@ -224,10 +398,40 @@ def get_current_user(authorization: str = Header(None)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key doğrulanamadı")
 
 def save_users(users):
-    """Kullanıcı listesini kaydet"""
-    os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False, indent=2)
+    """Kullanıcı listesini database'e kaydet"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Mevcut kullanıcıları temizle
+            cursor.execute('DELETE FROM users')
+            
+            # Yeni kullanıcıları ekle
+            for user in users:
+                cursor.execute('''
+                    INSERT INTO users 
+                    (id, username, password, email, is_admin, created_at, last_login, is_active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    user.get('id'), user.get('username'), user.get('password'),
+                    user.get('email'), user.get('is_admin', False),
+                    user.get('created_at'), user.get('last_login'),
+                    user.get('is_active', True)
+                ))
+            
+            conn.commit()
+            print(f"✅ {len(users)} kullanıcı database'e kaydedildi")
+            
+    except Exception as e:
+        print(f"❌ Database'e kullanıcı kaydetme hatası: {e}")
+        # Fallback: JSON dosyasına kaydet
+        try:
+            os.makedirs(os.path.dirname(USERS_FILE), exist_ok=True)
+            with open(USERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(users, f, ensure_ascii=False, indent=2)
+            print("✅ Fallback: Kullanıcılar JSON dosyasına kaydedildi")
+        except Exception as json_error:
+            print(f"❌ JSON fallback hatası: {json_error}")
 
 def create_default_admin():
     """Varsayılan admin kullanıcısını oluştur"""
@@ -3081,8 +3285,17 @@ async def get_portfolio_details(portfolio_id: str, current_user: dict = Depends(
 
 # ---------- UYGULAMA BAŞLATMA ----------
 if __name__ == "__main__":
-    # Kalıcı kullanıcı verilerini sağla
+    # Database'i başlat
     print("🚀 DCA Scanner Backend başlatılıyor...")
+    print("🔧 Database başlatılıyor...")
+    init_database()
+    
+    # Mevcut JSON verilerini database'e taşı
+    print("📦 Mevcut veriler database'e taşınıyor...")
+    migrate_json_to_database()
+    
+    # Kalıcı kullanıcı verilerini sağla
+    print("👥 Varsayılan kullanıcılar kontrol ediliyor...")
     ensure_default_users_exist()
     
     import uvicorn
@@ -3090,6 +3303,7 @@ if __name__ == "__main__":
     
     # Production'da PORT environment variable'ı kullan, local'de 8014
     port = int(os.environ.get("PORT", 8014))
+    print(f"🌐 Server {port} portunda başlatılıyor...")
     uvicorn.run(app, host="0.0.0.0", port=port)
 
 # ---------- VERİ YÜKLEME ENDPOINT'LERİ ----------

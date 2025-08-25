@@ -1,78 +1,142 @@
-# 🚀 DCA Scanner - Manuel Tarama ve Analiz Platformu
+# 🚀 DCA Scanner - DCA Alım Botu
 
-## 📋 Proje Açıklaması
-DCA (Dollar Cost Averaging) stratejisi için geliştirilmiş, çoklu piyasa tarama ve portföy yönetim platformu.
+DCA (Dollar Cost Averaging) stratejisi için geliştirilmiş manuel tarama ve portföy yönetim platformu.
 
-## 🛠️ Teknolojiler
-- **Backend:** FastAPI (Python 3.11)
-- **Frontend:** React + TypeScript + Vite
-- **Database:** JSON files
-- **Authentication:** Custom API Key system
+## ✨ Özellikler
 
-## 🚀 Deploy
+- **BIST Hisse Taraması**: Türkiye borsası hisselerinde DCA sinyalleri
+- **Kripto Para Taraması**: Top 100 kripto token'da DCA analizi
+- **Portföy Yönetimi**: Çoklu portföy desteği ile işlem takibi
+- **Takip Listesi**: Favori hisseleri takip etme
+- **Admin Paneli**: Kullanıcı ve portföy yönetimi
+- **Excel Export**: Portföy raporlarını Excel formatında indirme
 
-### Backend (Render.com)
-1. **Repository'yi clone et**
-2. **Render.com'da yeni Web Service oluştur**
-3. **Environment Variables:**
-   - `PYTHON_VERSION`: `3.11.13`
-   - `PORT`: `8014` (Render otomatik atayacak)
-4. **Build Command:** `pip install -r requirements.txt`
-5. **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-### Frontend (Vercel.com)
-1. **Repository'yi Vercel'e bağla**
-2. **Environment Variables:**
-   - `VITE_API_URL`: Backend URL'i (örn: `https://your-backend.onrender.com`)
-3. **Deploy et**
-
-## 🔧 Local Development
+## 🛠️ Teknik Detaylar
 
 ### Backend
-```bash
-# Virtual environment oluştur
-python3.11 -m venv .venv
-source .venv/bin/activate
+- **Framework**: FastAPI (Python 3.11+)
+- **Database**: SQLite (Production'da PostgreSQL önerilir)
+- **Authentication**: API Key tabanlı
+- **Data Sources**: TradingView API, CCXT
 
-# Dependencies yükle
+### Frontend
+- **Framework**: React 18 + TypeScript
+- **Styling**: Tailwind CSS
+- **Charts**: Lightweight Charts
+- **State Management**: Zustand
+
+## 🚀 Kurulum
+
+### 1. Repository'yi Klonlayın
+```bash
+git clone <repository-url>
+cd dca-alim-botu
+```
+
+### 2. Backend Kurulumu
+```bash
+# Python paketlerini yükle
 pip install -r requirements.txt
+
+# Database'i başlat
+chmod +x setup.sh
+./setup.sh
 
 # Backend'i başlat
 python main.py
 ```
 
-### Frontend
+### 3. Frontend Kurulumu
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-## 📁 Proje Yapısı
+## 🌐 Deployment
+
+### Render (Backend)
+1. Render'da yeni Web Service oluşturun
+2. Build Command: `pip install -r requirements.txt`
+3. Start Command: `python main.py`
+4. Environment Variables:
+   - `DATABASE_PATH`: `dca_scanner.db`
+   - `PORT`: `$PORT`
+
+### Vercel (Frontend)
+1. Vercel'de yeni proje oluşturun
+2. Build Command: `npm run build`
+3. Environment Variables:
+   - `VITE_API_URL`: Backend URL'iniz
+
+## 🔧 Database Yönetimi
+
+### SQLite (Development)
+- Veriler `dca_scanner.db` dosyasında saklanır
+- Otomatik migration ile JSON veriler database'e taşınır
+
+### PostgreSQL (Production)
+```bash
+# requirements.txt'ye ekleyin
+psycopg2-binary>=2.9.0
+
+# Environment variable
+DATABASE_URL=postgresql://username:password@localhost:5432/dca_scanner
 ```
-├── main.py                 # FastAPI backend
-├── requirements.txt        # Python dependencies
-├── Procfile              # Render deploy config
-├── runtime.txt           # Python version
-├── frontend/             # React frontend
-│   ├── src/
-│   ├── package.json
-│   └── vite.config.ts
-└── data/                 # JSON data files
-```
 
-## 🔐 Test Kullanıcıları
-- **Normal Kullanıcı:** `deneme1` / `deneme123`
-- **Admin:** `admin` / `Sanene88`
+## 📊 API Endpoints
 
-## 🌐 API Endpoints
-- **Docs:** `/docs` (Swagger UI)
-- **Login:** `/user/login`
-- **Portfolio:** `/portfolio/*`
-- **Admin:** `/admin/*`
+### Authentication
+- `POST /user/login` - Kullanıcı girişi
+- `POST /admin/login` - Admin girişi
 
-## 📝 Notlar
-- Python 3.11+ gerekli
-- pandas==2.0.3 ve numpy==1.24.3 kullanılıyor
-- TEST_MODE aktif (şifreler plain text)
-# Vercel deploy trigger
+### Portfolio
+- `GET /portfolio/list` - Portföy listesi
+- `POST /portfolio/create` - Portföy oluştur
+- `POST /portfolio/add` - İşlem ekle
+- `GET /portfolio/positions` - Pozisyonlar
+- `GET /portfolio/summary` - Portföy özeti
+
+### Scanning
+- `GET /scan` - DCA taraması
+- `GET /search-bist` - BIST hisse arama
+- `GET /search-crypto` - Kripto arama
+
+## 🔐 Güvenlik
+
+- API Key tabanlı authentication
+- Kullanıcı bazlı veri izolasyonu
+- Admin yetki kontrolü
+- Rate limiting (TradingView API)
+
+## 🐛 Sorun Giderme
+
+### Kullanıcı Bilgileri Siliniyor
+- **Çözüm**: Database kullanımına geçildi
+- **Kontrol**: `dca_scanner.db` dosyası mevcut mu?
+
+### Portfolio Oluşturulamıyor
+- **Çözüm**: Frontend portfolio seçimi düzeltildi
+- **Kontrol**: Console'da hata mesajları var mı?
+
+### Python 3.11 Uyumluluk
+- **Çözüm**: Package versiyonları güncellendi
+- **Kontrol**: `pip list` ile versiyonları kontrol edin
+
+## 📝 Lisans
+
+Bu proje MIT lisansı altında lisanslanmıştır.
+
+## 🤝 Katkıda Bulunma
+
+1. Fork yapın
+2. Feature branch oluşturun (`git checkout -b feature/amazing-feature`)
+3. Commit yapın (`git commit -m 'Add amazing feature'`)
+4. Push yapın (`git push origin feature/amazing-feature`)
+5. Pull Request oluşturun
+
+## 📞 İletişim
+
+- **Developer**: [Your Name]
+- **Email**: [your.email@example.com]
+- **Project Link**: [https://github.com/username/dca-alim-botu](https://github.com/username/dca-alim-botu)

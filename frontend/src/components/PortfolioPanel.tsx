@@ -26,7 +26,7 @@ export default function PortfolioPanel() {
     quantity: 0,
     target_price: 0,
     notes: '',
-    portfolio_id: 'default'
+    portfolio_id: ''
   });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
@@ -34,7 +34,7 @@ export default function PortfolioPanel() {
 
   // Portföy yönetimi state'leri
   const [portfolios, setPortfolios] = useState<Array<{portfolio_id: string, portfolio_name: string, portfolio_description?: string}>>([]);
-  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string>('default');
+  const [selectedPortfolioId, setSelectedPortfolioId] = useState<string>('');
   const [showPortfolioForm, setShowPortfolioForm] = useState(false);
   const [newPortfolio, setNewPortfolio] = useState({name: '', description: ''});
 
@@ -358,7 +358,7 @@ export default function PortfolioPanel() {
         const validPrev = backendPortfolios.find((p: any) => p.portfolio_id === prevSelected)?.portfolio_id;
         const firstId = backendPortfolios[0]?.portfolio_id;
         
-        const selected = validPrev || firstId || null;
+        const selected = validPrev || firstId || '';
         setSelectedPortfolioId(selected);
         
         console.log('🔍 DEBUG: Selected portfolio ID:', selected);
@@ -392,8 +392,8 @@ export default function PortfolioPanel() {
   const loadPortfolio = async () => {
     try {
       // Portfolio ID kontrolü
-      if (!selectedPortfolioId || selectedPortfolioId === 'default') {
-        console.log('🔍 DEBUG: Portfolio ID yok veya default, yükleme atlanıyor');
+      if (!selectedPortfolioId || selectedPortfolioId === '') {
+        console.log('🔍 DEBUG: Portfolio ID yok, yükleme atlanıyor');
         return;
       }
 
