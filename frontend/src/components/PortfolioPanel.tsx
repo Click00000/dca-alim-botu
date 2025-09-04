@@ -1207,10 +1207,35 @@ export default function PortfolioPanel() {
               <input
                 type="text"
                 value={newItem.symbol}
-                onChange={(e) => setNewItem({...newItem, symbol: e.target.value})}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewItem({ ...newItem, symbol: value });
+                  fetchSymbolSuggestions(value);
+                }}
+                onFocus={() => {
+                  if ((newItem.symbol || '').trim().length > 0) {
+                    fetchSymbolSuggestions(newItem.symbol);
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Hisse kodu yazın..."
               />
+              {showSymbolSuggestions && symbolSuggestions.length > 0 && (
+                <div className="relative">
+                  <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-56 overflow-auto">
+                    {symbolSuggestions.map((s) => (
+                      <li
+                        key={s.symbol}
+                        className="px-3 py-2 text-sm hover:bg-gray-100 cursor-pointer flex justify-between"
+                        onClick={() => selectSymbol(s.symbol)}
+                      >
+                        <span className="font-medium">{s.symbol}</span>
+                        <span className="text-gray-500 ml-2 truncate">{s.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Piyasa</label>
