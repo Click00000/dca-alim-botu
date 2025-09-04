@@ -9,7 +9,7 @@ const FALLBACK_API = "https://dca-scanner-backend.onrender.com";
 // Nihai seçim: önce BUILD_API, yoksa FALLBACK_API
 export const api = axios.create({
   baseURL: BUILD_API || FALLBACK_API, // daima MUTLAK URL
-  timeout: 15000,
+  timeout: 30000, // Timeout'u 30 saniyeye çıkar
 });
 
 // Debug: API URL'yi logla

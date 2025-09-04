@@ -92,6 +92,10 @@ export interface PortfolioPosition {
   target_price?: number;
   notes: string;
   transactions: PortfolioItem[];
+  // Pasta grafik için ek alanlar
+  total_value: number;  // Toplam değer (current_price * total_quantity)
+  profit_loss: number;  // Kar/zarar (total_value - total_cost)
+  profit_loss_percent: number;  // Kar/zarar yüzdesi
 }
 
 export interface PortfolioSummary {

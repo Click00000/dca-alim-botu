@@ -15,6 +15,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
+import shutil
 
 import hashlib
 from collections import deque
@@ -300,9 +301,10 @@ class WatchlistUpdateRequest(BaseModel):
     notes: Optional[str] = None
 
 # ---------- Portföy Veri Yönetimi ----------
-PORTFOLIO_DIR = "data/portfolios"
-PORTFOLIO_LIST_FILE = "data/portfolio_list.json"
-WATCHLIST_FILE = "watchlist.json"
+# Kalıcı dizinleri DATA_DIR altına taşı
+PORTFOLIO_DIR = os.path.join(DATA_DIR, "portfolios")
+PORTFOLIO_LIST_FILE = os.path.join(DATA_DIR, "portfolio_list.json")
+WATCHLIST_FILE = os.path.join(DATA_DIR, "watchlist.json")
 
 # ---------- Yeni ID Sistemi ----------
 def get_user_uid(username: str) -> int:
@@ -351,8 +353,58 @@ def get_next_portfolio_number(username: str) -> int:
 # ---------- Simple API Key Authentication ----------
 SECRET_KEY = "dca-scanner-secret-key-2024"  # Gerçek uygulamada güvenli olmalı
 
-# Active API keys - basit ve etkili
+# Kalıcı veri klasörü (Render gibi ortamlarda disk mount yolu verilebilir)
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+
+# API keys dosyası
+API_KEYS_FILE = os.path.join(DATA_DIR, "api_keys.json")
+
+# Active API keys - kalıcı olarak saklanacak
 active_api_keys = {}
+
+def bootstrap_data_dir():
+    """DATA_DIR'i oluştur ve varsa eski 'data/' klasöründen verileri kopyala.
+
+    Bu fonksiyon Render gibi ortamlarda kalıcı disk (/var/data) kullanırken
+    ilk çalıştırmada mevcut JSON verilerinin kaybolmamasını sağlar.
+    """
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        orig_dir = os.path.join(os.getcwd(), "data")
+
+        # Kopyalanacak dosya/yollar
+        candidates = [
+            (os.path.join(orig_dir, "portfolio_list.json"), os.path.join(DATA_DIR, "portfolio_list.json")),
+            (os.path.join(orig_dir, "users.json"), os.path.join(DATA_DIR, "users.json")),
+            (os.path.join(orig_dir, "api_keys.json"), os.path.join(DATA_DIR, "api_keys.json")),
+        ]
+
+        for src, dst in candidates:
+            if os.path.exists(src) and not os.path.exists(dst):
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copy2(src, dst)
+
+        # Portföy klasörü
+        orig_portfolios = os.path.join(orig_dir, "portfolios")
+        dst_portfolios = os.path.join(DATA_DIR, "portfolios")
+        if os.path.isdir(orig_portfolios):
+            if not os.path.isdir(dst_portfolios):
+                shutil.copytree(orig_portfolios, dst_portfolios)
+            else:
+                # Hedefte yoksa tek tek kopyala
+                for fname in os.listdir(orig_portfolios):
+                    src_fp = os.path.join(orig_portfolios, fname)
+                    dst_fp = os.path.join(dst_portfolios, fname)
+                    if os.path.isfile(src_fp) and not os.path.exists(dst_fp):
+                        shutil.copy2(src_fp, dst_fp)
+
+        # Watchlist dosyası
+        orig_watch = os.path.join(orig_dir, "watchlist.json")
+        dst_watch = os.path.join(DATA_DIR, "watchlist.json")
+        if os.path.exists(orig_watch) and not os.path.exists(dst_watch):
+            shutil.copy2(orig_watch, dst_watch)
+    except Exception as e:
+        print(f"❌ bootstrap_data_dir hatası: {e}")
 
 # ---------- Kullanıcı Veritabanı ----------
 USERS_FILE = "data/users.json"
@@ -407,6 +459,22 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return plain_password == hashed_password  # Test modunda düz metin karşılaştır
     return hash_password(plain_password) == hashed_password
 
+def load_api_keys():
+    """API key'leri JSON dosyasından yükle"""
+    if os.path.exists(API_KEYS_FILE):
+        try:
+            with open(API_KEYS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_api_keys():
+    """API key'leri JSON dosyasına kaydet"""
+    os.makedirs(os.path.dirname(API_KEYS_FILE), exist_ok=True)
+    with open(API_KEYS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(active_api_keys, f, ensure_ascii=False, indent=2)
+
 def create_api_key(username: str) -> str:
     """API key oluştur ve döndür"""
     import secrets
@@ -415,6 +483,8 @@ def create_api_key(username: str) -> str:
         "username": username,
         "created_at": datetime.now().isoformat()
     }
+    # Kalıcı olarak kaydet
+    save_api_keys()
     print(f"✅ Created API key for user: {username}")
     return api_key
 
@@ -609,6 +679,7 @@ def load_watchlist():
 
 def save_watchlist(watchlist):
     """Takip listesi verilerini kaydet"""
+    os.makedirs(os.path.dirname(WATCHLIST_FILE), exist_ok=True)
     with open(WATCHLIST_FILE, 'w', encoding='utf-8') as f:
         json.dump(watchlist, f, ensure_ascii=False, indent=2)
 
@@ -3341,11 +3412,23 @@ if __name__ == "__main__":
     # Database'i başlat
     print("🚀 DCA Scanner Backend başlatılıyor...")
     print("🔧 Database başlatılıyor...")
+    # Kalıcı veri klasörünü oluştur ve mevcut verileri taşı
+    try:
+        os.makedirs(DATA_DIR, exist_ok=True)
+        print(f"📁 DATA_DIR: {os.path.abspath(DATA_DIR)}")
+        bootstrap_data_dir()
+    except Exception as e:
+        print(f"❌ DATA_DIR hazırlanamadi: {e}")
     init_database()
     
     # Mevcut JSON verilerini database'e taşı
     print("📦 Mevcut veriler database'e taşınıyor...")
     migrate_json_to_database()
+    
+    # API key'leri yükle
+    print("🔑 API key'ler yükleniyor...")
+    active_api_keys.update(load_api_keys())
+    print(f"✅ {len(active_api_keys)} API key yüklendi")
     
     # Kalıcı kullanıcı verilerini sağla
     print("👥 Varsayılan kullanıcılar kontrol ediliyor...")

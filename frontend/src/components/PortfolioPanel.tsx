@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from 'chart.js';
+import { Pie } from 'react-chartjs-2';
 
 import { PortfolioItem, PortfolioPosition, PortfolioSummary, PortfolioAddRequest } from '../types';
 import { api } from '../lib/api';
+
+// Chart.js bileşenlerini kaydet
+ChartJS.register(ArcElement, Tooltip, Legend, Title);
 
 export default function PortfolioPanel() {
   // Debug: API instance'ı console'a yazdır
@@ -92,6 +97,57 @@ export default function PortfolioPanel() {
       }
       return 0;
     });
+  };
+
+  // Pasta grafik state'leri
+  const [showCharts, setShowCharts] = useState(true);
+  const [chartType, setChartType] = useState<'allocation' | 'profit_loss'>('allocation');
+
+  // Pasta grafik verilerini hazırla
+  const prepareChartData = () => {
+    if (!positions || positions.length === 0) return null;
+
+    if (chartType === 'allocation') {
+      // Portföy dağılımı grafiği
+      const labels = positions.map(pos => pos.symbol);
+      const data = positions.map(pos => pos.total_value);
+      const colors = [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
+        '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
+      ];
+
+      return {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderColor: colors.slice(0, labels.length).map(color => color + '80'),
+          borderWidth: 2,
+        }]
+      };
+    } else {
+      // Kar/zarar dağılımı grafiği
+      const profitable = positions.filter(pos => pos.profit_loss > 0);
+      const lossMaking = positions.filter(pos => pos.profit_loss < 0);
+      const neutral = positions.filter(pos => pos.profit_loss === 0);
+
+      const labels = ['Karlı Pozisyonlar', 'Zararlı Pozisyonlar', 'Nötr Pozisyonlar'];
+      const data = [
+        profitable.reduce((sum, pos) => sum + Math.abs(pos.profit_loss), 0),
+        lossMaking.reduce((sum, pos) => sum + Math.abs(pos.profit_loss), 0),
+        neutral.reduce((sum, pos) => sum + Math.abs(pos.profit_loss), 0)
+      ];
+
+      return {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: ['#10B981', '#EF4444', '#6B7280'],
+          borderColor: ['#10B98180', '#EF444480', '#6B728080'],
+          borderWidth: 2,
+        }]
+      };
+    }
   };
 
   // Sıralama handler'ı
@@ -458,6 +514,19 @@ export default function PortfolioPanel() {
       setLoading(false);
     }
   };
+
+  // Pozisyonlar yüklendikten sonra grafik verilerini hazırla
+  useEffect(() => {
+    if (positions && positions.length > 0) {
+      const updatedPositions = positions.map(pos => ({
+        ...pos,
+        total_value: (pos.current_price || 0) * pos.total_quantity,
+        profit_loss: ((pos.current_price || 0) * pos.total_quantity) - pos.total_cost,
+        profit_loss_percent: pos.total_cost > 0 ? ((((pos.current_price || 0) * pos.total_quantity) - pos.total_cost) / pos.total_cost) * 100 : 0
+      }));
+      setPositions(updatedPositions);
+    }
+  }, [portfolio]); // portfolio değiştiğinde pozisyonları güncelle
 
   // Fiyatları güncelle
   const updatePrices = async () => {
@@ -1259,9 +1328,117 @@ export default function PortfolioPanel() {
         </div>
       )}
 
+      {/* Pasta Grafikler */}
+      {showCharts && positions && positions.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Portföy Analizi</h3>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Grafik Tipi:</label>
+                <select
+                  value={chartType}
+                  onChange={(e) => setChartType(e.target.value as 'allocation' | 'profit_loss')}
+                  className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="allocation">Portföy Dağılımı</option>
+                  <option value="profit_loss">Kar/Zarar Dağılımı</option>
+                </select>
+              </div>
+              <button
+                onClick={() => setShowCharts(false)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Gizle
+              </button>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Pasta Grafik */}
+            <div className="flex justify-center">
+              {prepareChartData() && (
+                <div className="w-full max-w-md">
+                  <Pie
+                    data={prepareChartData()!}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: {
+                          position: 'bottom',
+                          labels: {
+                            padding: 20,
+                            usePointStyle: true,
+                            font: {
+                              size: 12
+                            }
+                          }
+                        },
+                        tooltip: {
+                          callbacks: {
+                            label: function(context) {
+                              const label = context.label || '';
+                              const value = context.parsed;
+                              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                              const percentage = ((value / total) * 100).toFixed(1);
+                              return `${label}: ₺${value.toLocaleString('tr-TR')} (${percentage}%)`;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                    height={300}
+                  />
+                </div>
+              )}
+            </div>
+            
+            {/* Grafik Açıklaması */}
+            <div className="flex flex-col justify-center">
+              <div className="space-y-3">
+                {chartType === 'allocation' ? (
+                  <>
+                    <h4 className="font-medium text-gray-900">Portföy Dağılımı</h4>
+                    <p className="text-sm text-gray-600">
+                      Bu grafik, portföyünüzdeki her hissenin toplam değer açısından ne kadar ağırlıkta olduğunu gösterir.
+                    </p>
+                    <div className="text-sm text-gray-600">
+                      <p><strong>Toplam Portföy Değeri:</strong> ₺{positions.reduce((sum, pos) => sum + (pos.total_value || 0), 0).toLocaleString('tr-TR')}</p>
+                      <p><strong>Aktif Pozisyon Sayısı:</strong> {positions.length}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h4 className="font-medium text-gray-900">Kar/Zarar Dağılımı</h4>
+                    <p className="text-sm text-gray-600">
+                      Bu grafik, portföyünüzdeki karlı ve zararlı pozisyonların dağılımını gösterir.
+                    </p>
+                    <div className="text-sm text-gray-600">
+                      <p><strong>Toplam Kar:</strong> ₺{positions.filter(pos => (pos.profit_loss || 0) > 0).reduce((sum, pos) => sum + (pos.profit_loss || 0), 0).toLocaleString('tr-TR')}</p>
+                      <p><strong>Toplam Zarar:</strong> ₺{Math.abs(positions.filter(pos => (pos.profit_loss || 0) < 0).reduce((sum, pos) => sum + (pos.profit_loss || 0), 0)).toLocaleString('tr-TR')}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pozisyonlar Tablosu */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Pozisyonlar Tablosu</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Pozisyonlar Tablosu</h3>
+          {!showCharts && (
+            <button
+              onClick={() => setShowCharts(true)}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Grafikleri Göster
+            </button>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
