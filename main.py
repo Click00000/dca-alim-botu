@@ -17,6 +17,9 @@ import sqlite3
 from contextlib import contextmanager
 import shutil
 
+# Kalıcı veri klasörü (her yerde erken tanımla)
+DATA_DIR = os.environ.get("DATA_DIR", "data")
+
 import hashlib
 from collections import deque
 from threading import Lock
@@ -353,8 +356,7 @@ def get_next_portfolio_number(username: str) -> int:
 # ---------- Simple API Key Authentication ----------
 SECRET_KEY = "dca-scanner-secret-key-2024"  # Gerçek uygulamada güvenli olmalı
 
-# Kalıcı veri klasörü (Render gibi ortamlarda disk mount yolu verilebilir)
-DATA_DIR = os.environ.get("DATA_DIR", "data")
+# (Moved to top) DATA_DIR already defined above
 
 # API keys dosyası
 API_KEYS_FILE = os.path.join(DATA_DIR, "api_keys.json")
