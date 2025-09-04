@@ -411,7 +411,8 @@ def bootstrap_data_dir():
         print(f"❌ bootstrap_data_dir hatası: {e}")
 
 # ---------- Kullanıcı Veritabanı ----------
-USERS_FILE = "data/users.json"
+# Kullanıcı JSON fallback/migration dosyası kalıcı dizinde olsun
+USERS_FILE = os.path.join(DATA_DIR, "users.json")
 ADMIN_USERNAME = "wastfc"
 ADMIN_PASSWORD = "Sanene88"  # Gerçek uygulamada hash'lenmiş olmalı
 
