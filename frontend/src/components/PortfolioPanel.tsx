@@ -110,7 +110,13 @@ export default function PortfolioPanel() {
     if (chartType === 'allocation') {
       // Portföy dağılımı grafiği
       const labels = positions.map(pos => pos.symbol);
-      const data = positions.map(pos => pos.total_value);
+      const data = positions.map(pos => {
+        const price = (pos.current_price ?? pos.avg_price ?? 0);
+        const value = (price * pos.total_quantity) || pos.total_cost || 0;
+        return value;
+      });
+      const total = data.reduce((a, b) => a + (b || 0), 0);
+      if (total <= 0) return null;
       const colors = [
         '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF',
         '#FF9F40', '#FF6384', '#C9CBCF', '#4BC0C0', '#FF6384'
@@ -137,6 +143,8 @@ export default function PortfolioPanel() {
         lossMaking.reduce((sum, pos) => sum + Math.abs(pos.profit_loss), 0),
         neutral.reduce((sum, pos) => sum + Math.abs(pos.profit_loss), 0)
       ];
+      const total = data.reduce((a, b) => a + (b || 0), 0);
+      if (total <= 0) return null;
 
       return {
         labels,
@@ -1358,7 +1366,7 @@ export default function PortfolioPanel() {
             {/* Pasta Grafik */}
             <div className="flex justify-center">
               {prepareChartData() && (
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md h-72">
                   <Pie
                     data={prepareChartData()!}
                     options={{
@@ -1404,7 +1412,11 @@ export default function PortfolioPanel() {
                       Bu grafik, portföyünüzdeki her hissenin toplam değer açısından ne kadar ağırlıkta olduğunu gösterir.
                     </p>
                     <div className="text-sm text-gray-600">
-                      <p><strong>Toplam Portföy Değeri:</strong> ₺{positions.reduce((sum, pos) => sum + (pos.total_value || 0), 0).toLocaleString('tr-TR')}</p>
+                      <p><strong>Toplam Portföy Değeri:</strong> ₺{positions.reduce((sum, pos) => {
+                        const price = (pos.current_price ?? pos.avg_price ?? 0);
+                        const value = (price * pos.total_quantity) || pos.total_cost || 0;
+                        return sum + value;
+                      }, 0).toLocaleString('tr-TR')}</p>
                       <p><strong>Aktif Pozisyon Sayısı:</strong> {positions.length}</p>
                     </div>
                   </>
