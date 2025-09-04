@@ -13,6 +13,7 @@ export default function LoginPanel({ onLoginSuccess, onBackToMain }: LoginPanelP
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,12 @@ export default function LoginPanel({ onLoginSuccess, onBackToMain }: LoginPanelP
         setError(response.data.error || 'Giriş başarısız');
       }
     } catch (error: any) {
-      setError(error.response?.data?.error || 'Giriş sırasında hata oluştu');
+      const status = error.response?.status;
+      const backendMsg = error.response?.data?.error || error.response?.data?.detail;
+      const msg = backendMsg
+        ? `${backendMsg}${status ? ` (HTTP ${status})` : ''}`
+        : (status ? `Giriş hatası (HTTP ${status})` : 'Giriş sırasında hata oluştu');
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -80,17 +86,25 @@ export default function LoginPanel({ onLoginSuccess, onBackToMain }: LoginPanelP
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Şifre
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Şifrenizi girin"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute inset-y-0 right-0 px-3 flex items-center text-sm text-gray-600 hover:text-gray-800"
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                >
+                  {showPassword ? 'Gizle' : 'Göster'}
+                </button>
               </div>
             </div>
 
