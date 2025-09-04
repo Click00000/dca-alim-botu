@@ -59,8 +59,10 @@ npm run dev
 1. Render'da yeni Web Service oluşturun
 2. Build Command: `pip install -r requirements.txt`
 3. Start Command: `python main.py`
-4. Environment Variables:
-   - `DATABASE_PATH`: `dca_scanner.db`
+4. Disk: Persistent Disk ekleyin, Mount Path: `/var/data`
+5. Environment Variables:
+   - `DATA_DIR`: `/var/data`
+   - `DATABASE_PATH`: `/var/data/dca_scanner.db` (opsiyonel; varsayılan zaten bu)
    - `PORT`: `$PORT`
 
 ### Vercel (Frontend)

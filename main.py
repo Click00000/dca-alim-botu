@@ -35,7 +35,8 @@ from bist_stocks_lz import BIST_STOCKS_LZ, get_stocks_by_symbol as get_stocks_lz
 app = FastAPI(title="DCA Scanner API", version="1.0.0")
 
 # ---------- Database Yönetimi ----------
-DATABASE_PATH = os.environ.get("DATABASE_PATH", "dca_scanner.db")
+# Database dosyası varsayılan olarak DATA_DIR altında tutulur ki kalıcı disk kullanılsın
+DATABASE_PATH = os.environ.get("DATABASE_PATH", os.path.join(DATA_DIR, "dca_scanner.db"))
 
 def init_database():
     """Database'i başlat ve tabloları oluştur"""
@@ -271,6 +272,7 @@ class PortfolioAddRequest(BaseModel):
     transaction_type: str  # "buy" veya "sell"
     price: float
     quantity: float
+    date: Optional[str] = None
     target_price: Optional[float] = None
     notes: Optional[str] = None
     portfolio_id: str  # Hangi portföye ekleneceği
@@ -2172,7 +2174,7 @@ async def add_portfolio_item(request: PortfolioAddRequest, current_user: dict = 
             "transaction_type": request.transaction_type,
             "price": request.price,
             "quantity": request.quantity,
-            "date": datetime.now().isoformat(),
+            "date": request.date if request.date else datetime.now().isoformat(),
             "target_price": request.target_price,
             "notes": request.notes,
             "current_price": None,

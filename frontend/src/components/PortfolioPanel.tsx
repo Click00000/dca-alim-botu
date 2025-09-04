@@ -27,7 +27,9 @@ export default function PortfolioPanel() {
     quantity: 0,
     target_price: 0,
     notes: '',
-    portfolio_id: ''
+    portfolio_id: '',
+    // manuel tarih alanı (ISO string)
+    date: ''
   });
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [editingItems, setEditingItems] = useState<Set<string>>(new Set());
@@ -662,7 +664,8 @@ export default function PortfolioPanel() {
           quantity: 0,
           target_price: 0,
           notes: '',
-          portfolio_id: 'default'
+          portfolio_id: 'default',
+          date: ''
         });
         
         // Portföyü yeniden yükle
@@ -1198,54 +1201,16 @@ export default function PortfolioPanel() {
       {showAddForm && (
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Yeni İşlem Ekle</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-            <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Sembol</label>
               <input
                 type="text"
                 value={newItem.symbol}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setNewItem({...newItem, symbol: value});
-                  // Otomatik tamamlama tetikle
-                  if (newItem.market === "bist" || newItem.market === "crypto") {
-                    fetchSymbolSuggestions(value);
-                  }
-                }}
-                onFocus={() => {
-                  if (newItem.symbol.trim() && (newItem.market === "bist" || newItem.market === "crypto")) {
-                    fetchSymbolSuggestions(newItem.symbol);
-                  }
-                }}
-                onBlur={() => {
-                  // Biraz gecikme ile önerileri gizle (tıklama için)
-                  setTimeout(() => setShowSymbolSuggestions(false), 200);
-                }}
+                onChange={(e) => setNewItem({...newItem, symbol: e.target.value})}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Hisse kodu yazın..."
               />
-              
-              {/* Otomatik tamamlama önerileri */}
-              {showSymbolSuggestions && symbolSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto mt-1">
-                  {symbolSuggestionsLoading ? (
-                    <div className="p-3 text-center text-gray-500">
-                      <span className="text-sm">Aranıyor...</span>
-                    </div>
-                  ) : (
-                    symbolSuggestions.map((suggestion, index) => (
-                      <button
-                        key={index}
-                        onClick={() => selectSymbol(suggestion.symbol)}
-                        className="w-full text-left p-3 hover:bg-gray-100 border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div className="font-semibold text-gray-800 text-sm">{suggestion.symbol}</div>
-                        <div className="text-xs text-gray-600 truncate">{suggestion.name}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Piyasa</label>
@@ -1297,14 +1262,12 @@ export default function PortfolioPanel() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hedef Fiyat</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tarih (opsiyonel)</label>
               <input
-                type="number"
-                step="0.01"
-                value={newItem.target_price}
-                onChange={(e) => setNewItem({...newItem, target_price: parseFloat(e.target.value) || 0})}
+                type="datetime-local"
+                value={newItem.date || ''}
+                onChange={(e) => setNewItem({ ...newItem, date: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
               />
             </div>
           </div>

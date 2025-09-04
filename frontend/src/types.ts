@@ -113,6 +113,7 @@ export interface PortfolioAddRequest {
   transaction_type: string; // "buy" veya "sell"
   price: number;
   quantity: number;
+  date?: string; // ISO string (isteğe bağlı manuel tarih)
   target_price?: number;
   notes?: string;
   portfolio_id: string;
