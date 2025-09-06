@@ -283,6 +283,7 @@ class PortfolioUpdateRequest(BaseModel):
     quantity: Optional[float] = None
     target_price: Optional[float] = None
     notes: Optional[str] = None
+    date: Optional[str] = None
 
 # ---------- Takip Listesi Modelleri ----------
 class WatchlistItem(BaseModel):
@@ -2228,6 +2229,8 @@ async def update_portfolio_item(item_id: str, request: PortfolioUpdateRequest, p
                     item["target_price"] = request.target_price
                 if request.notes is not None:
                     item["notes"] = request.notes
+                if request.date is not None:
+                    item["date"] = request.date
                 
                 save_portfolio(portfolio_id, portfolio)
                 return {"success": True, "item": item}

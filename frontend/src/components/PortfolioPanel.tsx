@@ -41,6 +41,23 @@ export default function PortfolioPanel() {
   const [showPortfolioForm, setShowPortfolioForm] = useState(false);
   const [newPortfolio, setNewPortfolio] = useState({name: '', description: ''});
 
+  // Kapanmış pozisyonlar için tip ve state
+  type ClosedPosition = {
+    symbol: string;
+    market: string;
+    avg_buy: number;
+    avg_sell: number;
+    first_buy_date: string | null;
+    last_sell_date: string | null;
+    holding_days: number | null;
+    closed_qty: number;
+    total_profit_tl: number;
+    total_profit_pct: number;
+    active_qty: number;
+    current_price?: number | null;
+  };
+  const [closedPositions, setClosedPositions] = useState<ClosedPosition[]>([]);
+
   // Sıralama state'leri
   const [positionsSortConfig, setPositionsSortConfig] = useState<{
     key: string;
@@ -159,6 +176,22 @@ export default function PortfolioPanel() {
       };
     }
   };
+
+  // Portföy dağılım yüzdeleri (allocation) – isimlerin yanında ve sağ açıklamada kullanılacak
+  const allocationBreakdown = React.useMemo(() => {
+    if (!positions || positions.length === 0) return [] as { symbol: string; percent: number; value: number }[];
+    const values = positions.map(pos => {
+      const price = (pos.current_price ?? pos.avg_price ?? 0);
+      return (price * pos.total_quantity) || pos.total_cost || 0;
+    });
+    const total = values.reduce((a, b) => a + (b || 0), 0);
+    if (total <= 0) return [];
+    return positions.map((pos, idx) => {
+      const value = values[idx] || 0;
+      const percent = total > 0 ? (value / total) * 100 : 0;
+      return { symbol: `${pos.symbol} (${pos.market})`, percent, value };
+    }).sort((a, b) => b.percent - a.percent);
+  }, [positions]);
 
   // Sıralama handler'ı
   const handleSort = (
@@ -300,6 +333,103 @@ export default function PortfolioPanel() {
       );
       return hasTransactionsInPeriod;
     });
+  };
+
+  // FIFO ile kapanmış pozisyonları hesapla
+  const computeClosedPositions = (
+    items: PortfolioItem[],
+    positionsForPrice: PortfolioPosition[]
+  ): ClosedPosition[] => {
+    if (!items || items.length === 0) return [];
+
+    // Sembole göre grupla
+    const groups: Record<string, { market: string; items: PortfolioItem[] }> = {};
+    for (const it of items) {
+      const key = `${it.symbol}|${it.market}`;
+      if (!groups[key]) groups[key] = { market: it.market, items: [] };
+      groups[key].items.push(it);
+    }
+
+    const result: ClosedPosition[] = [];
+
+    Object.entries(groups).forEach(([key, group]) => {
+      const [symbol] = key.split('|');
+      const transactions = [...group.items].sort(
+        (a, b) => new Date(a.date || '').getTime() - new Date(b.date || '').getTime()
+      );
+
+      // FIFO kuyruğu: her alış için kalan miktar
+      const buyQueue: Array<{ qty: number; price: number; date: string | null }> = [];
+      let totalBuyQty = 0;
+      let totalSellQty = 0;
+
+      // Kapanan özet
+      let matchedQty = 0;
+      let matchedBuyCost = 0; // TL
+      let matchedSellValue = 0; // TL
+      let firstBuyDate: string | null = null;
+      let lastSellDate: string | null = null;
+
+      for (const tx of transactions) {
+        if (tx.transaction_type === 'buy') {
+          buyQueue.push({ qty: tx.quantity, price: tx.price, date: tx.date || null });
+          totalBuyQty += tx.quantity;
+        } else if (tx.transaction_type === 'sell') {
+          let remaining = tx.quantity;
+          totalSellQty += tx.quantity;
+          while (remaining > 0 && buyQueue.length > 0) {
+            const head = buyQueue[0];
+            const useQty = Math.min(remaining, head.qty);
+            // Eşleşme
+            matchedQty += useQty;
+            matchedBuyCost += useQty * head.price;
+            matchedSellValue += useQty * tx.price;
+            if (!firstBuyDate && head.date) firstBuyDate = head.date;
+            lastSellDate = tx.date || lastSellDate;
+
+            head.qty -= useQty;
+            remaining -= useQty;
+            if (head.qty <= 0) buyQueue.shift();
+          }
+        }
+      }
+
+      const closedQty = matchedQty;
+      const activeQty = Math.max(totalBuyQty - totalSellQty, 0);
+      if (closedQty <= 0 && activeQty <= 0) return; // hiç veri yoksa geç
+
+      const avg_buy = closedQty > 0 ? matchedBuyCost / closedQty : 0;
+      const avg_sell = closedQty > 0 ? matchedSellValue / closedQty : 0;
+      const total_profit_tl = matchedSellValue - matchedBuyCost;
+      const total_profit_pct = matchedBuyCost > 0 ? (total_profit_tl / matchedBuyCost) * 100 : 0;
+      let holding_days: number | null = null;
+      if (firstBuyDate && lastSellDate) {
+        const diff =
+          new Date(lastSellDate).getTime() - new Date(firstBuyDate).getTime();
+        holding_days = Math.max(Math.round(diff / (1000 * 60 * 60 * 24)), 0);
+      }
+
+      // Anlık fiyat (aktif adet varsa)
+      const pos = positionsForPrice.find((p) => p.symbol === symbol);
+      const current_price = pos?.current_price ?? null;
+
+      result.push({
+        symbol,
+        market: group.market,
+        avg_buy,
+        avg_sell,
+        first_buy_date: firstBuyDate,
+        last_sell_date: lastSellDate,
+        holding_days,
+        closed_qty: closedQty,
+        total_profit_tl,
+        total_profit_pct,
+        active_qty: activeQty,
+        current_price,
+      });
+    });
+
+    return result.sort((a, b) => (a.symbol > b.symbol ? 1 : -1));
   };
 
   // Zaman dilimine göre kar/zarar hesapla
@@ -500,9 +630,13 @@ export default function PortfolioPanel() {
       if (positionsResponse.data.success) {
         setPositions(positionsResponse.data.positions);
         console.log('🔍 DEBUG: Positions state güncellendi:', positionsResponse.data.positions);
+        // Kapanmış pozisyonları hesapla
+        const cps = computeClosedPositions(response.data.portfolio || [], positionsResponse.data.positions || []);
+        setClosedPositions(cps);
       } else {
         console.error('❌ ERROR: Positions response success false:', positionsResponse.data);
         setPositions([]);
+        setClosedPositions([]);
       }
       
       // Özet bilgileri yükle
@@ -867,7 +1001,8 @@ export default function PortfolioPanel() {
             price: item.price,
             quantity: item.quantity,
             target_price: item.target_price,
-            notes: item.notes
+            notes: item.notes,
+            date: item.date || ''
           }
         });
       }
@@ -900,7 +1035,8 @@ export default function PortfolioPanel() {
         price: parseFloat(formData.price),
         quantity: parseFloat(formData.quantity),
         target_price: formData.target_price ? parseFloat(formData.target_price) : null,
-        notes: formData.notes
+        notes: formData.notes,
+        date: formData.date || null
       }, {
         headers: {
           'Authorization': `Bearer ${apiKey}`
@@ -1368,6 +1504,23 @@ export default function PortfolioPanel() {
                             usePointStyle: true,
                             font: {
                               size: 12
+                            },
+                            generateLabels: (chart) => {
+                              const dataset = chart.data.datasets[0] as any;
+                              const total = (dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
+                              return chart.data.labels!.map((label: any, i: number) => {
+                                const value = (dataset.data[i] as number) || 0;
+                                const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                const color = dataset.backgroundColor[i];
+                                return {
+                                  text: `${label} (${pct}%)`,
+                                  fillStyle: color,
+                                  strokeStyle: color,
+                                  lineWidth: 1,
+                                  hidden: false,
+                                  index: i
+                                } as any;
+                              });
                             }
                           }
                         },
@@ -1386,6 +1539,20 @@ export default function PortfolioPanel() {
                     }}
                     height={300}
                   />
+                  {/* Alt metin: Hisse + yüzde listesi */}
+                  {allocationBreakdown.length > 0 && chartType === 'allocation' && (
+                    <div className="mt-4 text-sm text-gray-700">
+                      <div className="font-medium mb-1">Portföy Dağılımı</div>
+                      <ul className="space-y-1">
+                        {allocationBreakdown.map((row) => (
+                          <li key={row.symbol} className="flex justify-between">
+                            <span>{row.symbol}</span>
+                            <span>{row.percent.toFixed(1)}%</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1406,6 +1573,19 @@ export default function PortfolioPanel() {
                         return sum + value;
                       }, 0).toLocaleString('tr-TR')}</p>
                       <p><strong>Aktif Pozisyon Sayısı:</strong> {positions.length}</p>
+                      {allocationBreakdown.length > 0 && (
+                        <div className="mt-3">
+                          <div className="font-medium">Hisseler ve Yüzdeleri</div>
+                          <ul className="mt-1 space-y-1">
+                            {allocationBreakdown.map((row) => (
+                              <li key={row.symbol} className="flex justify-between">
+                                <span>{row.symbol}</span>
+                                <span>{row.percent.toFixed(1)}%</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -1701,12 +1881,20 @@ export default function PortfolioPanel() {
                                         </td>
                                         <td className="px-3 py-2 text-xs text-gray-900">
                                           {isEditing ? (
-                                            <input
-                                              type="text"
-                                              value={formData.notes || ''}
-                                              onChange={(e) => handleEditChange(item.id, 'notes', e.target.value)}
-                                              className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
-                                            />
+                                            <div className="flex items-center gap-2">
+                                              <input
+                                                type="datetime-local"
+                                                value={formData.date || ''}
+                                                onChange={(e) => handleEditChange(item.id, 'date', e.target.value)}
+                                                className="w-44 px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                              <input
+                                                type="text"
+                                                value={formData.notes || ''}
+                                                onChange={(e) => handleEditChange(item.id, 'notes', e.target.value)}
+                                                className="w-32 px-2 py-1 border border-gray-300 rounded text-sm"
+                                              />
+                                            </div>
                                           ) : (
                                             item.notes || '-'
                                           )}
@@ -1931,6 +2119,67 @@ export default function PortfolioPanel() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Kapanmış Pozisyonlar */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Kapanmış Pozisyonlar</h3>
+          <div className="text-sm text-gray-600">FIFO bazlı hesaplanır</div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sembol</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ort. Alış</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ort. Satış</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İlk Alış</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Son Satış</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gün</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kap. Adet</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Toplam K/Z</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">K/Z %</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktif Adet</th>
+                <th className="px-2 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Anlık</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {closedPositions.length === 0 && (
+                <tr>
+                  <td colSpan={11} className="px-4 py-6 text-center text-gray-500">
+                    Henüz kapanmış pozisyon bulunmuyor.
+                  </td>
+                </tr>
+              )}
+              {closedPositions.map((cp) => (
+                <tr key={cp.symbol} className="hover:bg-gray-50">
+                  <td className="px-2 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
+                    {cp.symbol} ({cp.market})
+                  </td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{formatCurrency(cp.avg_buy)}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{formatCurrency(cp.avg_sell)}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-700">{cp.first_buy_date ? new Date(cp.first_buy_date).toLocaleDateString('tr-TR') : '-'}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-700">{cp.last_sell_date ? new Date(cp.last_sell_date).toLocaleDateString('tr-TR') : '-'}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{cp.holding_days ?? '-'}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{cp.closed_qty.toLocaleString('tr-TR')}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">
+                    <span className={cp.total_profit_tl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatCurrency(cp.total_profit_tl)}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">
+                    <span className={cp.total_profit_pct >= 0 ? 'text-green-600' : 'text-red-600'}>
+                      {formatPercent(cp.total_profit_pct)}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{cp.active_qty.toLocaleString('tr-TR')}</td>
+                  <td className="px-2 py-2 whitespace-nowrap text-sm">{cp.current_price != null ? formatCurrency(cp.current_price) : '-'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* İşlem Geçmişi */}
