@@ -38,6 +38,34 @@ app = FastAPI(title="DCA Scanner API", version="1.0.0")
 # Database dosyası varsayılan olarak DATA_DIR altında tutulur ki kalıcı disk kullanılsın
 DATABASE_PATH = os.environ.get("DATABASE_PATH", os.path.join(DATA_DIR, "dca_scanner.db"))
 
+# --- Uygulama başlangıç hook'u: Render/Vercel gibi ortamlarda da tablo ve kullanıcıları hazırla ---
+@app.on_event("startup")
+async def on_startup() -> None:
+    # Kalıcı dizini hazırla ve migrasyonları çalıştır
+    try:
+        # Bazı yardımcılar aşağıda tanımlı; runtime'da mevcut olacaklar
+        bootstrap_data_dir()
+    except Exception as _:
+        pass
+    try:
+        init_database()
+    except Exception as _:
+        pass
+    try:
+        migrate_json_to_database()
+    except Exception as _:
+        pass
+    try:
+        # API anahtarlarını yükle
+        active_api_keys.update(load_api_keys())
+    except Exception as _:
+        pass
+    try:
+        # Varsayılan kullanıcıların varlığını garanti et
+        ensure_default_users_exist()
+    except Exception as _:
+        pass
+
 def init_database():
     """Database'i başlat ve tabloları oluştur"""
     try:
